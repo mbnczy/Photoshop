@@ -6,4 +6,17 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Remove="Controllers\" />
+    <None Remove="Views\" />
+    <None Remove="Logic\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Controllers\" />
+    <Folder Include="Views\" />
+    <Folder Include="Logic\" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Aspose.Drawing" Version="23.9.0" />
+  </ItemGroup>
 </Project>
