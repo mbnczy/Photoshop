@@ -6,7 +6,7 @@ using System.IO.Pipelines;
 
 namespace Photoshop.Logic
 {
-	public class Logic
+	public class PLogic
 	{
         public bool Invert(Bitmap b)
         {
