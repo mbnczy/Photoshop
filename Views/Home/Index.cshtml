@@ -89,7 +89,7 @@
                 <button id="undo">Undo</button>
                 <br>
                 <button id="invertColors">Invert Colors</button>
-                <br>x
+                <br>
                 <button id="grayscale">Grayscale</button>
                 <br>
 
@@ -120,6 +120,7 @@
     </div>
 
     <script>
+
         const btnsubmit = document.getElementById('uploadsubmit');
         const uploadedImage = document.getElementById('image');
         const invertColorsCheckbox = document.getElementById('invertColors');
@@ -144,6 +145,13 @@
         const blueRangeValue = document.getElementById('blue-range-value');
 
         const btnundo = document.getElementById('undo');
+
+        window.addEventListener('load', function () {
+            url = '@Url.Action("GetActualImage", "Home")';
+            uploadedImage.src = url;
+        });
+
+
 
         brightnessRange.addEventListener('input', function () {
             brightnessvalue.textContent = this.value;
