@@ -3,13 +3,42 @@ using System.Diagnostics.Contracts;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO.Pipelines;
+using System.Net.Mime;
+using System.Reflection;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Photoshop.Logic
 {
 	public class PLogic
 	{
-        public bool Invert(Bitmap b)
+
+        private static PLogic instance = null;
+        public static PLogic Instance
         {
+            get
+            {
+                if (instance == null)
+                {
+                    instance = new PLogic();
+                }
+                return instance;
+            }
+        }
+
+        public Stack<Bitmap> Images = new Stack<Bitmap>();
+
+        public PLogic()
+        {
+
+            System.Drawing.AsposeDrawing.License lic = new System.Drawing.AsposeDrawing.License();
+            lic.SetLicense("Aspose.Drawing.lic");
+        }
+
+        public bool Invert()
+        {
+            Bitmap b = Images.Peek();
+
+
             // GDI+ still lies to us - the return format is BGR, NOT RGB. 
             BitmapData bmData = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
                 ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
@@ -33,11 +62,16 @@ namespace Photoshop.Logic
             }
 
             b.UnlockBits(bmData);
+
+
+            Images.Push(b);
             return true;
         }
 
-        public bool GrayScale(Bitmap b)
+        public bool GrayScale()
         {
+            Bitmap b = Images.Peek();
+
             BitmapData bmData = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
                 ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
             int stride = bmData.Stride;
@@ -67,12 +101,17 @@ namespace Photoshop.Logic
                     p += nOffset;
                 }
                 b.UnlockBits(bmData);
+
+
+                Images.Push(b);
                 return true;
             }
         }
 
-        public bool Brightness(Bitmap b, int brightness)
+        public bool Brightness(int brightness)
         {
+            Bitmap b = Images.Peek();
+
             BitmapData bmData = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
                 ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
             int stride = bmData.Stride;
@@ -101,13 +140,18 @@ namespace Photoshop.Logic
                     p += nOffset;
                 }
                 b.UnlockBits(bmData);
+
+
+                Images.Push(b);
                 return true;
             }
             
         }
 
-        public bool Contrast(Bitmap b, int nContrast)
+        public bool Contrast(int nContrast)
         {
+            Bitmap b = Images.Peek();
+
             BitmapData bmData = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
                 ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
             int stride = bmData.Stride;
@@ -148,12 +192,18 @@ namespace Photoshop.Logic
                     p += nOffset;
                 }
                 b.UnlockBits(bmData);
+
+                Images.Push(b);
                 return true;
             }
         }
 
-        public bool Gamma(Bitmap b, double red, double green, double blue)
+        public bool Gamma(double red, double green, double blue)
         {
+            Bitmap b = Images.Peek();
+
+
+
             BitmapData bmData = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
                 ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
             int stride = bmData.Stride;
@@ -197,8 +247,74 @@ namespace Photoshop.Logic
             }
 
             b.UnlockBits(bmData);
+
+
+            Images.Push(b);
             return true;
+        }
+
+
+
+        public void AddNew(IFormFile img)
+        {
+            Images.Push(ConvertIFormFileToBitmap(img));
+        }
+        public Bitmap GetActual()
+        {
+            return Images.Peek();
+        }
+        public string GetActualSrc()
+        {
+            return Convert.ToBase64String(ToByteArray(GetActual(),ImageFormat.Jpeg));
+        }
+        public void Undo()
+        {
+            Images.Pop();
+        }
+        public Bitmap ConvertIFormFileToBitmap(IFormFile file)
+        {
+            using (var stream = file.OpenReadStream())
+            {
+                return new Bitmap(stream);
+            }
+        }
+        public static byte[] ToByteArray(Bitmap bitmap, ImageFormat format)
+        {
+            using (MemoryStream stream = new MemoryStream())
+            {
+                bitmap.Save(stream, format);
+                return stream.ToArray();
+            }
+        }
+
+        public byte[] GetImage()
+        {
+            byte[] imageBytes = ConvertBitmapToByteArray(GetActual(), ImageFormat.Jpeg);
+            return imageBytes;
+        }
+        private byte[] ConvertBitmapToByteArray(Bitmap bitmap, ImageFormat format)
+        {
+            using (MemoryStream stream = new MemoryStream())
+            {
+                bitmap.Save(stream, format);
+                return stream.ToArray();
+            }
+        }
+
+
+        public void AddImage(IFormFile img)
+        {
+            using (var stream = img.OpenReadStream())
+            {
+                byte[] buffer = new byte[img.Length];
+                stream.Read(buffer, 0, (int)img.Length);
+
+                // Set Image and ContentType properties using reflection
+                //Color.GetType().GetProperty("Image" + (i + 1)).SetValue(Color, buffer);
+                //Color.GetType().GetProperty("ContentType" + (i + 1)).SetValue(Color, Color.PictureData[i].ContentType);
+            }
         }
     }
 }
+
 

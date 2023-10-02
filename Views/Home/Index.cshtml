@@ -1,4 +1,7 @@
-﻿<!DOCTYPE html>
+﻿@using System.Drawing;
+@model string
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -67,12 +70,16 @@
     <div class="container">
         <div class="image-column">
             <div id="image-container">
-                <img id="image" src="" alt="Uploaded Image">
+                <img id="image" src="data:image/jpeg;base64,@(Model)" alt="Uploaded Image">
             </div>
         </div>
         <div class="controls-column">
             <div class="controls">
-                <input type="file" id="file-input">
+                <form action="@Url.Action("Index", "Home")" method="post" enctype="multipart/form-data">
+                    <input type="file" id="file-input" name="img">
+                    <input type="submit" value="Upload" id="uploadsubmit" action="">
+                </form>
+
                 <label for="red-gamma">Red Gamma:</label>
                 <input type="range" id="red-gamma" min="0.1" max="3" step="0.1" value="1">
                 <label for="green-gamma">Green Gamma:</label>
@@ -80,21 +87,61 @@
                 <label for="blue-gamma">Blue Gamma:</label>
                 <input type="range" id="blue-gamma" min="0.1" max="3" step="0.1" value="1">
 
-                <form action="@Url.Action("Gamma", "Home")" method="post">
-                    <button type="submit" name="applygamma">Apply Gamma</button>
-                </form>
 
-               
-                <button id="invert">Invert Colors</button>
-                <!-- Add more buttons and controls for additional manipulations here -->
+
+                <label>
+                    <input type="checkbox" id="invertColors"> Invert Colors
+                </label>
+                <label>
+                    <input type="checkbox" id="grayscale"> Grayscale
+                </label>
+                <label>
+                    <input type="checkbox" id="applyGamma"> Apply Gamma Correction
+                </label>
+
+                
             </div>
         </div>
     </div>
 
     <script>
+        const uploadedImage = document.getElementById('image');
+        const invertColorsCheckbox = document.getElementById('invertColors');
+        const grayscaleCheckbox = document.getElementById('grayscale');
+        const applyGammaCheckbox = document.getElementById('applyGamma');
+        const fileInput = document.getElementById('file-input');
+
+        invertColorsCheckbox.addEventListener('change', function () {
+            if (this.checked) {
+                url = '@Url.Action("Invert", "Home")';
+                uploadedImage.src = url;
+            } else {
+                // Clear any transformations
+                //uploadedImage.src = '';
+            }
+        });
+        grayscaleCheckbox.addEventListener('change', function () {
+            if (this.checked) {
+                url = '@Url.Action("Grayscale", "Home")';
+                uploadedImage.src = url;
+            } else {
+                // Clear any transformations
+                //uploadedImage.src = '';
+            }
+        });
+        applyGammaCheckbox.addEventListener('change', function () {
+            if (this.checked) {
+                url = '@Url.Action("GetActualImage", "Home")';
+                uploadedImage.src = url;
+            } else {
+                // Clear any transformations
+                //uploadedImage.src = '';
+            }
+        });
+
+
         document.getElementById('file-input').addEventListener('change', function (e) {
             const fileInput = e.target;
-            const uploadedImage = document.getElementById('image');
 
             if (fileInput.files && fileInput.files[0]) {
                 const reader = new FileReader();
@@ -105,9 +152,9 @@
 
                 reader.readAsDataURL(fileInput.files[0]);
             } else {
-                uploadedImage.src = ''; // Clear the image if no file is selected
+
+                //uploadedImage.src = ''; // Clear the image if no file is selected
             }
-        });
-    </script>
+        });</script>
 </body>
 </html>
