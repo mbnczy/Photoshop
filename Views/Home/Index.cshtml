@@ -10,7 +10,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            display: flex;
+/*            display: flex;*/
             justify-content: center;
             align-items: center;
             height: 100vh;
@@ -20,11 +20,11 @@
         .container {
             display: flex;
             align-items: flex-start;
-            width: 80%;
+            width: 100%;
         }
 
         .image-column {
-            flex: 1;
+            flex: 2;
             padding: 20px;
         }
 
@@ -52,7 +52,7 @@
         }
 
         input[type="range"] {
-            width: 80%;
+            width: 70%;
             margin-bottom: 10px;
         }
 
@@ -63,10 +63,16 @@
             border: none;
             cursor: pointer;
         }
+        h1 {
+            display: block;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
-    <h1>Image Manipulation</h1>
+    <div><h1>Image Manipulation</h1></div>
+    
+
     <div class="container">
         <div class="image-column">
             <div id="image-container">
@@ -80,52 +86,83 @@
                     <input type="submit" value="Upload" id="uploadsubmit" action="">
                 </form>
 
-                <label for="red-gamma">Red Gamma:</label>
-                <input type="range" id="red-gamma" min="0.1" max="3" step="0.1" value="1">
-                <label for="green-gamma">Green Gamma:</label>
-                <input type="range" id="green-gamma" min="0.1" max="3" step="0.1" value="1">
-                <label for="blue-gamma">Blue Gamma:</label>
-                <input type="range" id="blue-gamma" min="0.1" max="3" step="0.1" value="1">
-
-
-
-                @*<label>
-                    <input type="checkbox" id="invertColors"> Invert Colors
-                </label>
-                <label>
-                    <input type="checkbox" id="grayscale"> Grayscale
-                </label>
-                <label>
-                    <input type="checkbox" id="applyGamma"> Apply Gamma Correction
-                </label>*@
-
-                <label>
-                    <button id="invertColors">Invert Colors</button>
-                </label>
-                <label>
-                    <button id="grayscale">Grayscale</button>
-                </label>
-                <label>
-                    <button id="applyGamma">Apply Gamma Correction</button>
-                </label>
                 <button id="undo">Undo</button>
+                <br>
+                <button id="invertColors">Invert Colors</button>
+                <br>
+                <button id="grayscale">Grayscale</button>
+                <br>
+
+                <button id="btnbrightness">Apply Brightness</button>
+                <br>
+                <input type="range" id="brightness" min="-255" max="255" step="1" value="0"><span id="brightness-value">0</span>
+                <br>
+                <button id="btncontrast">Apply Contrast</button>
+                <br>
+                <input type="range" id="contrast" min="-100" max="100" step="1" value="0"><span id="contrast-value">0</span>
+                <br>
+                <button id="applyGamma">Apply Gamma Correction</button>
+                <br>
+                <label for="red-gamma">Red Gamma:</label>
+                <input type="range" id="red-gamma" min="-255" max="255" step="1" value="0"><span id="red-range-value">0</span>
+                <br>
+                <label for="green-gamma">Green Gamma:</label>
+                <input type="range" id="green-gamma" min="-255" max="255" step="1" value="0"><span id="green-range-value">0</span>
+                <br>
+                <label for="blue-gamma">Blue Gamma:</label>
+                <input type="range" id="blue-gamma" min="-255" max="255" step="1" value="0"><span id="blue-range-value">0</span>
+                <br>
+
+
 
             </div>
         </div>
     </div>
 
     <script>
+        const btnsubmit = document.getElementById('uploadsubmit');
         const uploadedImage = document.getElementById('image');
         const invertColorsCheckbox = document.getElementById('invertColors');
         const grayscaleCheckbox = document.getElementById('grayscale');
+        const btnbrightness = document.getElementById('btnbrightness');
+        const btncontrast = document.getElementById('btncontrast');
         const applyGammaCheckbox = document.getElementById('applyGamma');
         const fileInput = document.getElementById('file-input');
+
+        const brightnessRange = document.getElementById('brightness');
+        const contrastRange = document.getElementById('contrast');
 
         const redgamma = document.getElementById('red-gamma');
         const greengamma = document.getElementById('green-gamma');
         const bluegamma = document.getElementById('blue-gamma');
 
+        const brightnessvalue = document.getElementById('brightness-value');
+        const contrastvalue = document.getElementById('contrast-value');
+
+        const redRangeValue = document.getElementById('red-range-value');
+        const greenRangeValue = document.getElementById('green-range-value');
+        const blueRangeValue = document.getElementById('blue-range-value');
+
         const btnundo = document.getElementById('undo');
+
+        brightnessRange.addEventListener('input', function () {
+            brightnessvalue.textContent = this.value;
+        });
+        contrastRange.addEventListener('input', function () {
+            contrastvalue.textContent = this.value;
+        });
+
+        redgamma.addEventListener('input', function () {
+            redRangeValue.textContent = this.value;
+        });
+        greengamma.addEventListener('input', function () {
+            greenRangeValue.textContent = this.value;
+        });
+        bluegamma.addEventListener('input', function () {
+            blueRangeValue.textContent = this.value;
+        });
+
+
 
         invertColorsCheckbox.addEventListener('click', function () {
             url = '@Url.Action("Invert", "Home")';
@@ -147,6 +184,20 @@
                 //uploadedImage.src = '';
             }
         });
+        btnbrightness.addEventListener('click', function () {
+            url = '@Url.Action("Brightness", "Home", new { brightness = "PLACEHOLDER_BRIGHTNESS" })';
+            url = url.replace("PLACEHOLDER_BRIGHTNESS", parseInt(brightnessvalue.textContent))
+            console.log(url)
+            uploadedImage.src = url;
+        });
+        btncontrast.addEventListener('click', function () {
+            url = '@Url.Action("Contrast", "Home", new { contrast = "PLACEHOLDER_CONTRAST" })';
+            url = url.replace("PLACEHOLDER_CONTRAST", parseInt(contrastvalue.textContent))
+            console.log(url)
+            uploadedImage.src = url;
+        });
+
+
         applyGammaCheckbox.addEventListener('click', function () {
             url = '@Url.Action("Gamma", "Home", new {
                       red = "PLACEHOLDER_RED",
@@ -155,9 +206,10 @@
                 })';
 
                 url = url
-                    .replace("PLACEHOLDER_RED", redgamma.Value)
-                    .replace("PLACEHOLDER_GREEN", greengamma.Value)
-                    .replace("PLACEHOLDER_BLUE", bluegamma.Value);
+                    .replace("PLACEHOLDER_RED", parseInt(redRangeValue.textContent))
+                    .replace("PLACEHOLDER_GREEN", parseInt(greenRangeValue.textContent))
+                    .replace("PLACEHOLDER_BLUE", parseInt(blueRangeValue.textContent));
+                console.log(url)
                 uploadedImage.src = url;
             if (this.checked) {
 
@@ -185,10 +237,11 @@
                 };
 
                 reader.readAsDataURL(fileInput.files[0]);
-            } else {
-
-                //uploadedImage.src = ''; // Clear the image if no file is selected
             }
+            //else {
+
+            //    //uploadedImage.src = ''; // Clear the image if no file is selected
+            //}
         });</script>
 </body>
 </html>

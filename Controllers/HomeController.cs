@@ -47,6 +47,22 @@ namespace Photoshop.Controllers
             byte[] img = PLogic.Instance.GetImage();
             return new FileContentResult(img, "image/jpeg");
         }
+        public IActionResult Brightness(double brightness)
+        {
+            PLogic.Instance.Brightness((int)brightness);
+
+            byte[] img = PLogic.Instance.GetImage();
+            return new FileContentResult(img, "image/jpeg");
+        }
+        public IActionResult Contrast(double contrast)
+        {
+            PLogic.Instance.Contrast((int)contrast);
+
+            byte[] img = PLogic.Instance.GetImage();
+            return new FileContentResult(img, "image/jpeg");
+        }
+
+
         public IActionResult GetActualImage()
         {
             byte[] img = PLogic.Instance.GetImage();
