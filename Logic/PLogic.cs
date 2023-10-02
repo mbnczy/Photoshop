@@ -289,15 +289,6 @@ namespace Photoshop.Logic
                 return stream.ToArray();
             }
         }
-        //public byte[] GetImageUndo()
-        //{
-        //    //Images.Pop();
-        //    //System.Threading.Thread.Sleep(1000);
-        //    List<Bitmap> imagelist = Images.ToList();
-        //    byte[] imageBytes = ConvertBitmapToByteArray(imagelist[imagelist.Count-1], ImageFormat.Jpeg);
-        //    ;
-        //    return imageBytes;
-        //}
         public byte[] GetImage()
         {
             byte[] imageBytes = ConvertBitmapToByteArray(GetActual(), ImageFormat.Jpeg);
