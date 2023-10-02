@@ -31,13 +31,12 @@ namespace Photoshop.Logic
         {
 
             System.Drawing.AsposeDrawing.License lic = new System.Drawing.AsposeDrawing.License();
-            lic.SetLicense("Aspose.Drawing.lic");
+            //lic.SetLicense("Aspose.Drawing.lic");
         }
 
         public bool Invert()
         {
             Bitmap b = Images.Peek();
-
 
             // GDI+ still lies to us - the return format is BGR, NOT RGB. 
             BitmapData bmData = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
@@ -269,7 +268,8 @@ namespace Photoshop.Logic
         }
         public void Undo()
         {
-            Images.Pop();
+            Instance.Images.Pop();
+            ;
         }
         public Bitmap ConvertIFormFileToBitmap(IFormFile file)
         {

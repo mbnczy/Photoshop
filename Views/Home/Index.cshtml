@@ -89,7 +89,7 @@
 
 
 
-                <label>
+                @*<label>
                     <input type="checkbox" id="invertColors"> Invert Colors
                 </label>
                 <label>
@@ -97,9 +97,20 @@
                 </label>
                 <label>
                     <input type="checkbox" id="applyGamma"> Apply Gamma Correction
+                </label>*@
+
+                <label>
+                    <button id="invertColors">Invert Colors</button>
+                </label>
+                <label>
+                    <button id="grayscale">Grayscale</button>
+                </label>
+                <label>
+                    <button id="applyGamma">Apply Gamma Correction</button>
                 </label>
 
-                
+                <button id="undo" />
+
             </div>
         </div>
     </div>
@@ -111,34 +122,57 @@
         const applyGammaCheckbox = document.getElementById('applyGamma');
         const fileInput = document.getElementById('file-input');
 
-        invertColorsCheckbox.addEventListener('change', function () {
+        const redgamma = document.getElementById('red-gamma');
+        const greengamma = document.getElementById('green-gamma');
+        const bluegamma = document.getElementById('blue-gamma');
+
+        const btnundo = document.getElementById('undo');
+
+        invertColorsCheckbox.addEventListener('click', function () {
+            url = '@Url.Action("Invert", "Home")';
+            uploadedImage.src = url;
             if (this.checked) {
-                url = '@Url.Action("Invert", "Home")';
-                uploadedImage.src = url;
+
             } else {
                 // Clear any transformations
                 //uploadedImage.src = '';
             }
         });
-        grayscaleCheckbox.addEventListener('change', function () {
-            if (this.checked) {
-                url = '@Url.Action("Grayscale", "Home")';
+        grayscaleCheckbox.addEventListener('click', function () {
+            url = '@Url.Action("Grayscale", "Home")';
                 uploadedImage.src = url;
+            if (this.checked) {
+
             } else {
                 // Clear any transformations
                 //uploadedImage.src = '';
             }
         });
-        applyGammaCheckbox.addEventListener('change', function () {
-            if (this.checked) {
-                url = '@Url.Action("GetActualImage", "Home")';
+        applyGammaCheckbox.addEventListener('click', function () {
+            url = '@Url.Action("Gamma", "Home", new {
+                      red = "PLACEHOLDER_RED",
+                      green = "PLACEHOLDER_GREEN",
+                      blue = "PLACEHOLDER_BLUE",
+                })';
+
+                url = url
+                    .replace("PLACEHOLDER_RED", redgamma.Value)
+                    .replace("PLACEHOLDER_GREEN", greengamma.Value)
+                    .replace("PLACEHOLDER_BLUE", bluegamma.Value);
                 uploadedImage.src = url;
+            if (this.checked) {
+
             } else {
                 // Clear any transformations
                 //uploadedImage.src = '';
             }
         });
 
+        btnundo.addEventListener('click',  function () {
+            console.log('undo')
+            url = '@Url.Action("Undo", "Home")';
+            uploadedImage.src = url;
+        });
 
         document.getElementById('file-input').addEventListener('change', function (e) {
             const fileInput = e.target;
