@@ -108,8 +108,7 @@
                 <label>
                     <button id="applyGamma">Apply Gamma Correction</button>
                 </label>
-
-                <button id="undo" />
+                <button id="undo">Undo</button>
 
             </div>
         </div>
@@ -169,6 +168,7 @@
         });
 
         btnundo.addEventListener('click',  function () {
+            uploadedImage.src = '';
             console.log('undo')
             url = '@Url.Action("Undo", "Home")';
             uploadedImage.src = url;

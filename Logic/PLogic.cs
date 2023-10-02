@@ -25,7 +25,7 @@ namespace Photoshop.Logic
             }
         }
 
-        public Stack<Bitmap> Images = new Stack<Bitmap>();
+        public Stack<byte[]> Images = new Stack<byte[]>();
 
         public PLogic()
         {
@@ -36,7 +36,7 @@ namespace Photoshop.Logic
 
         public bool Invert()
         {
-            Bitmap b = Images.Peek();
+            Bitmap b = ConvertByteArrayToBitmap(Images.Peek());
 
             // GDI+ still lies to us - the return format is BGR, NOT RGB. 
             BitmapData bmData = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
@@ -63,13 +63,13 @@ namespace Photoshop.Logic
             b.UnlockBits(bmData);
 
 
-            Images.Push(b);
+            Images.Push(ConvertBitmapToByteArray(b,ImageFormat.Jpeg));
             return true;
         }
 
         public bool GrayScale()
         {
-            Bitmap b = Images.Peek();
+            Bitmap b = ConvertByteArrayToBitmap(Images.Peek());
 
             BitmapData bmData = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
                 ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
@@ -102,14 +102,14 @@ namespace Photoshop.Logic
                 b.UnlockBits(bmData);
 
 
-                Images.Push(b);
+                Images.Push(ConvertBitmapToByteArray(b, ImageFormat.Jpeg));
                 return true;
             }
         }
 
         public bool Brightness(int brightness)
         {
-            Bitmap b = Images.Peek();
+            Bitmap b = ConvertByteArrayToBitmap(Images.Peek());
 
             BitmapData bmData = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
                 ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
@@ -141,7 +141,8 @@ namespace Photoshop.Logic
                 b.UnlockBits(bmData);
 
 
-                Images.Push(b);
+                Images.Push(ConvertBitmapToByteArray(b, ImageFormat.Jpeg));
+
                 return true;
             }
             
@@ -149,7 +150,7 @@ namespace Photoshop.Logic
 
         public bool Contrast(int nContrast)
         {
-            Bitmap b = Images.Peek();
+            Bitmap b = ConvertByteArrayToBitmap(Images.Peek());
 
             BitmapData bmData = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
                 ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
@@ -192,14 +193,15 @@ namespace Photoshop.Logic
                 }
                 b.UnlockBits(bmData);
 
-                Images.Push(b);
+                Images.Push(ConvertBitmapToByteArray(b, ImageFormat.Jpeg));
+
                 return true;
             }
         }
 
         public bool Gamma(double red, double green, double blue)
         {
-            Bitmap b = Images.Peek();
+            Bitmap b = ConvertByteArrayToBitmap(Images.Peek());
 
 
 
@@ -248,7 +250,8 @@ namespace Photoshop.Logic
             b.UnlockBits(bmData);
 
 
-            Images.Push(b);
+            Images.Push(ConvertBitmapToByteArray(b, ImageFormat.Jpeg));
+
             return true;
         }
 
@@ -256,20 +259,20 @@ namespace Photoshop.Logic
 
         public void AddNew(IFormFile img)
         {
-            Images.Push(ConvertIFormFileToBitmap(img));
+            Images.Push(ConvertBitmapToByteArray(ConvertIFormFileToBitmap(img), ImageFormat.Jpeg));
         }
         public Bitmap GetActual()
         {
-            return Images.Peek();
+            return ConvertByteArrayToBitmap(Images.Peek());
         }
         public string GetActualSrc()
         {
             return Convert.ToBase64String(ToByteArray(GetActual(),ImageFormat.Jpeg));
         }
-        public void Undo()
+        public bool Undo()
         {
-            Instance.Images.Pop();
-            ;
+            Images.Pop();
+            return true;
         }
         public Bitmap ConvertIFormFileToBitmap(IFormFile file)
         {
@@ -286,7 +289,15 @@ namespace Photoshop.Logic
                 return stream.ToArray();
             }
         }
-
+        //public byte[] GetImageUndo()
+        //{
+        //    //Images.Pop();
+        //    //System.Threading.Thread.Sleep(1000);
+        //    List<Bitmap> imagelist = Images.ToList();
+        //    byte[] imageBytes = ConvertBitmapToByteArray(imagelist[imagelist.Count-1], ImageFormat.Jpeg);
+        //    ;
+        //    return imageBytes;
+        //}
         public byte[] GetImage()
         {
             byte[] imageBytes = ConvertBitmapToByteArray(GetActual(), ImageFormat.Jpeg);
@@ -300,8 +311,16 @@ namespace Photoshop.Logic
                 return stream.ToArray();
             }
         }
-
-
+        private Bitmap ConvertByteArrayToBitmap(byte[] bytearray)
+        {
+            Bitmap bmp;
+            using (var ms = new MemoryStream(bytearray))
+            {
+                bmp = new Bitmap(ms);
+            }
+            return bmp;
+        }
+        
         public void AddImage(IFormFile img)
         {
             using (var stream = img.OpenReadStream())

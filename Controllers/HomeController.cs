@@ -54,11 +54,13 @@ namespace Photoshop.Controllers
         }
         public IActionResult Undo()
         {
-            ;
-            PLogic.Instance.Undo();
-
-            byte[] img = PLogic.Instance.GetImage();
-            return new FileContentResult(img, "image/jpeg");
+            if (PLogic.Instance.Undo())
+            {
+                byte[] img = PLogic.Instance.GetImage();
+                
+                return new FileContentResult(img, "image/jpeg");
+            }
+            return RedirectToAction(nameof(Index));
         }
     }
 }
