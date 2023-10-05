@@ -117,6 +117,7 @@ namespace Photoshop.Logic
             System.IntPtr Scan0 = bmData.Scan0;
             int nWidth = b.Width * 3;
 
+            
 
             unsafe
             {
@@ -187,6 +188,44 @@ namespace Photoshop.Logic
 
                         p[2] = (byte)pixel;
 
+                        ++p;
+                    }
+                    p += nOffset;
+                }
+                b.UnlockBits(bmData);
+
+                Images.Push(ConvertBitmapToByteArray(b, ImageFormat.Jpeg));
+
+                return true;
+            }
+        }
+
+        public bool Logarithm(int nLog)
+        {
+            Bitmap b = ConvertByteArrayToBitmap(Images.Peek());
+
+            BitmapData bmData = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
+                ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+            int stride = bmData.Stride;
+            System.IntPtr Scan0 = bmData.Scan0;
+            int nWidth = b.Width * 3;
+
+            unsafe
+            {
+                byte* p = (byte*)(void*)Scan0;
+                int nOffset = stride - b.Width * 3;
+
+                for (int y = 0; y < b.Height; ++y)
+                {
+                    for (int x = 0; x < nWidth; ++x)
+                    {
+                        //g(x, y) = c * log [1.0 + f(x, y)]
+                        double pixelValue = p[0];
+                        double transformedValue = nLog * Math.Log(1.0 + pixelValue);
+
+                        byte newValue = (byte)Math.Min(255, Math.Max(0, transformedValue));
+
+                        p[0] = newValue;
                         ++p;
                     }
                     p += nOffset;

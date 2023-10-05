@@ -61,6 +61,13 @@ namespace Photoshop.Controllers
             byte[] img = PLogic.Instance.GetImage();
             return new FileContentResult(img, "image/jpeg");
         }
+        public IActionResult Logarithm(double log)
+        {
+            PLogic.Instance.Logarithm((int)log);
+
+            byte[] img = PLogic.Instance.GetImage();
+            return new FileContentResult(img, "image/jpeg");
+        }
 
 
         public IActionResult GetActualImage()

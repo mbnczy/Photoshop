@@ -101,6 +101,10 @@
                 <br>
                 <input type="range" id="contrast" min="-100" max="100" step="1" value="0"><span id="contrast-value">0</span>
                 <br>
+                <button id="btnlogarithm">Apply Logarithm</button>
+                <br>
+                <input type="range" id="logarithm" min="-100" max="100" step="1" value="0"><span id="logarithm-value">0</span>
+                <br>
                 <button id="applyGamma">Apply Gamma Correction</button>
                 <br>
                 <label for="red-gamma">Red Gamma:</label>
@@ -127,11 +131,13 @@
         const grayscaleCheckbox = document.getElementById('grayscale');
         const btnbrightness = document.getElementById('btnbrightness');
         const btncontrast = document.getElementById('btncontrast');
+        const btnlogarithm = document.getElementById('btnlogarithm');
         const applyGammaCheckbox = document.getElementById('applyGamma');
         const fileInput = document.getElementById('file-input');
 
         const brightnessRange = document.getElementById('brightness');
         const contrastRange = document.getElementById('contrast');
+        const logarithmRange = document.getElementById('logarithm');
 
         const redgamma = document.getElementById('red-gamma');
         const greengamma = document.getElementById('green-gamma');
@@ -139,6 +145,7 @@
 
         const brightnessvalue = document.getElementById('brightness-value');
         const contrastvalue = document.getElementById('contrast-value');
+        const logarithmvalue = document.getElementById('logarithm-value');
 
         const redRangeValue = document.getElementById('red-range-value');
         const greenRangeValue = document.getElementById('green-range-value');
@@ -158,6 +165,9 @@
         });
         contrastRange.addEventListener('input', function () {
             contrastvalue.textContent = this.value;
+        });
+        logarithmRange.addEventListener('input', function () {
+            logarithmvalue.textContent = this.value;
         });
 
         redgamma.addEventListener('input', function () {
@@ -201,6 +211,12 @@
         btncontrast.addEventListener('click', function () {
             url = '@Url.Action("Contrast", "Home", new { contrast = "PLACEHOLDER_CONTRAST" })';
             url = url.replace("PLACEHOLDER_CONTRAST", parseInt(contrastvalue.textContent))
+            console.log(url)
+            uploadedImage.src = url;
+        });
+        btnlogarithm.addEventListener('click', function () {
+            url = '@Url.Action("Logarithm", "Home", new { log = "PLACEHOLDER_LOGARITHM" })';
+            url = url.replace("PLACEHOLDER_LOGARITHM", parseInt(logarithmvalue.textContent))
             console.log(url)
             uploadedImage.src = url;
         });
