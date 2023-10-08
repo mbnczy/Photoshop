@@ -8,6 +8,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Manipulation</title>
     <style>
+        #histogramCanvas {
+            border: 1px solid black;
+        }
+
+        .bar-label {
+            text-anchor: middle;
+            font-size: 12px;
+            fill: coral;
+        }
         body {
             font-family: Arial, sans-serif;
 /*            display: flex;*/
@@ -71,7 +80,7 @@
 </head>
 <body>
     <div><h1>Image Manipulation</h1></div>
-    
+
 
     <div class="container">
         <div class="image-column">
@@ -118,13 +127,15 @@
                 <br>
 
 
+                <button id="btnhist">Make Histogram</button>
+
 
             </div>
         </div>
     </div>
-
+    <h2>Image Histogram</h2>
+    <svg id="histogramCanvas" width="900" height="400"></svg>
     <script>
-
         const btnsubmit = document.getElementById('uploadsubmit');
         const uploadedImage = document.getElementById('image');
         const invertColorsCheckbox = document.getElementById('invertColors');
@@ -222,6 +233,70 @@
         });
 
 
+
+
+        btnhist.addEventListener('click', function () {
+            fetch('/Home/Histogram')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json(); // Parse the response as JSON
+                })
+                .then(data => {
+                    // Process the histogram data here and update the UI
+                    console.log('Histogram Data:', data);
+                    const histogramData = data;
+                    const svg = document.getElementById('histogramCanvas');
+
+                    //clear
+                    while (svg.firstChild) {
+                        svg.removeChild(svg.firstChild);
+                    }
+                    // Set up chart properties
+                    const svgWidth = svg.getAttribute('width');
+                    const svgHeight = svg.getAttribute('height');
+                    const maxBarHeight = svgHeight - 20; // Adjust as needed
+                    const barWidth = svgWidth / histogramData.length;
+
+                    const maxValue = Math.max.apply(null, histogramData);
+
+                    // Create and append rectangles (bars) to the SVG
+                    for (let i = 0; i < histogramData.length; i++) {
+                        const barHeight = (histogramData[i] / maxValue) * maxBarHeight;
+                        const x = i * barWidth;
+                        const y = svgHeight - barHeight;
+                        const valueLabel = histogramData[i]; // Get the value to display
+
+                        // Create the rectangle (bar)
+                        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                        
+                        rect.setAttribute('x', x);
+                        rect.setAttribute('y', y);
+                        rect.setAttribute('width', barWidth);
+                        rect.setAttribute('height', barHeight);
+                        rect.setAttribute('fill', 'blue'); // Bar color (adjust as needed)
+
+                        svg.appendChild(rect);
+                        // Create and append the value label
+                        if (valueLabel != 0)
+                        {
+                            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                            label.setAttribute('x', x + barWidth / 2);
+                            label.setAttribute('y', y - 5); // Adjust the vertical position
+                            label.setAttribute('class', 'bar-label');
+                            label.textContent = valueLabel;
+                            svg.appendChild(label);
+                        }
+                    }
+                })
+                .catch(error => {
+                    // Handle any errors that occur during the fetch request
+                    console.error('Fetch error:', error);
+                });
+
+        });
+
         applyGammaCheckbox.addEventListener('click', function () {
             url = '@Url.Action("Gamma", "Home", new {
                       red = "PLACEHOLDER_RED",
@@ -266,6 +341,7 @@
 
             //    //uploadedImage.src = ''; // Clear the image if no file is selected
             //}
-        });</script>
+        });
+    </script>
 </body>
 </html>

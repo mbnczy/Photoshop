@@ -69,6 +69,11 @@ namespace Photoshop.Controllers
             return new FileContentResult(img, "image/jpeg");
         }
 
+        public IActionResult Histogram()
+        {
+            int[] hist = PLogic.Instance.CreateHistogram();
+            return Ok(hist);
+        }
 
         public IActionResult GetActualImage()
         {

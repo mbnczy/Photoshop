@@ -294,7 +294,36 @@ namespace Photoshop.Logic
             return true;
         }
 
+        public int[] CreateHistogram()
+        {
+            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
 
+            //if (bitmap.PixelFormat != PixelFormat.Format8bppIndexed)
+            //    throw new ArgumentException("Bitmap must be in 8-bit grayscale format.");
+
+            int[] histogram = new int[256];
+
+            BitmapData bmpData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
+                ImageLockMode.ReadOnly, PixelFormat.Format8bppIndexed);
+
+            unsafe
+            {
+                byte* scan0 = (byte*)bmpData.Scan0;
+
+                for (int y = 0; y < bitmap.Height; y++)
+                {
+                    for (int x = 0; x < bitmap.Width; x++)
+                    {
+                        byte pixelValue = scan0[y * bmpData.Stride + x];
+                        histogram[pixelValue]++;
+                    }
+                }
+            }
+
+            bitmap.UnlockBits(bmpData);
+
+            return histogram;
+        }
 
         public void AddNew(IFormFile img)
         {
