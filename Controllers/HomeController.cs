@@ -82,7 +82,13 @@ namespace Photoshop.Controllers
             byte[] img = PLogic.Instance.GetImage();
             return new FileContentResult(img, "image/jpeg");
         }
+        public IActionResult BoxFilter(double box)
+        {
+            PLogic.Instance.ApplyAverageFilter((int)box);
 
+            byte[] img = PLogic.Instance.GetImage();
+            return new FileContentResult(img, "image/jpeg");
+        }
         public IActionResult GetActualImage()
         {
             if (PLogic.Instance.Images.Count!=0)
