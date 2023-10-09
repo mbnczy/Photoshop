@@ -436,7 +436,7 @@ namespace Photoshop.Logic
             return true;
         }
 
-        public void ApplyAverageFilter(int filterSize)
+        public bool ApplyAverageFilter(int filterSize)
         {
             Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
             int halfSize = filterSize / 2;
@@ -483,7 +483,101 @@ namespace Photoshop.Logic
 
             bitmap.UnlockBits(bitmapData);
             Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
+            return true;
         }
+
+        private int[,] CreateGaussianKernel(int size, int sigma)
+        {
+            int[,] kernel = new int[size, size];
+            int sum = 0;
+            int halfSize = size / 2;
+
+            for (int y = -halfSize; y <= halfSize; y++)
+            {
+                for (int x = -halfSize; x <= halfSize; x++)
+                {
+                    int exponent = -(x * x + y * y) / (2 * sigma * sigma);
+                    int value = (int)(Math.Exp(exponent) / (2 * Math.PI * sigma * sigma));
+                    kernel[y + halfSize, x + halfSize] = value;
+                    sum += value;
+                }
+            }
+
+            // Normalize
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    kernel[y, x] /= sum;
+                }
+            }
+
+            return kernel;
+        }
+
+        private double Gauss(int x, int y, double sigma)
+        {
+            return Math.Exp(-(x * x + y * y) / (2 * sigma * sigma)) / (2 * Math.PI * sigma * sigma);
+        }
+
+        public bool ApplyGaussianFilter(int kernelSize, int sigma)
+        {
+            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
+
+            // Create a copy of the input bitmap to avoid modifying the original
+            Bitmap outputBitmap = new Bitmap(bitmap);
+
+            // Create the Gaussian kernel
+            //int[,] kernel = CreateGaussianKernel(kernelSize, sigma);
+
+            int halfSize = kernelSize / 2;
+            int width = bitmap.Width;
+            int height = bitmap.Height;
+
+            BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, width, height),
+                ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+
+            
+            unsafe
+            {
+                byte* ptr = (byte*)bitmapData.Scan0.ToPointer();
+
+                int stride = bitmapData.Stride;
+
+                for (int y = halfSize; y < height - halfSize; y++)
+                {
+                    for (int x = halfSize; x < width - halfSize; x++)
+                    {
+                        double totalRed = 0, totalGreen = 0, totalBlue = 0;
+
+                        for (int j = -halfSize; j <= halfSize; j++)
+                        {
+                            for (int i = -halfSize; i <= halfSize; i++)
+                            {
+                                byte* pixelPtr = ptr + (y + j) * stride + (x + i) * 3;
+
+                                double kernelValue = Gauss(i, j, sigma);
+                                totalRed += pixelPtr[2] * kernelValue;
+                                totalGreen += pixelPtr[1] * kernelValue;
+                                totalBlue += pixelPtr[0] * kernelValue;
+                            }
+                        }
+
+                        byte* outputPixelPtr = ptr + y * stride + x * 3;
+                        outputPixelPtr[2] = (byte)totalRed;
+                        outputPixelPtr[1] = (byte)totalGreen;
+                        outputPixelPtr[0] = (byte)totalBlue;
+                    }
+                }
+            }
+
+            bitmap.UnlockBits(bitmapData);
+
+            Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
+            return true;
+        }
+
+
 
         public void AddNew(IFormFile img)
         {

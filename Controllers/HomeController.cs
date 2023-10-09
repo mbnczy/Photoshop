@@ -89,6 +89,13 @@ namespace Photoshop.Controllers
             byte[] img = PLogic.Instance.GetImage();
             return new FileContentResult(img, "image/jpeg");
         }
+        public IActionResult GaussFilter(string id, string sigma)
+        {
+            PLogic.Instance.ApplyGaussianFilter(Convert.ToInt32(id), Convert.ToInt32(sigma));
+
+            byte[] img = PLogic.Instance.GetImage();
+            return new FileContentResult(img, "image/jpeg");
+        }
         public IActionResult GetActualImage()
         {
             if (PLogic.Instance.Images.Count!=0)

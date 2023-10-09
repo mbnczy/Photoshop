@@ -118,7 +118,12 @@
                 <br>
                 <button id="btnbox">Apply Avg Filter (Box)</button>
                 <br>
-                <input type="range" id="box" min="0" max="100" step="1" value="0"><span id="box-value">0</span>
+                <input type="range" id="box" min="0" max="50" step="1" value="0"><span id="box-value">0</span>
+                <br>
+                <button id="btngauss">Apply Gauss Filter</button>
+                <br>
+                <input type="range" id="gauss" min="0" max="50" step="1" value="0"><span id="gauss-value">0</span>
+                <input type="number" id="gausssigma">
                 <br>
                 <button id="applyGamma">Apply Gamma Correction</button>
                 <br>
@@ -150,6 +155,7 @@
         const btncontrast = document.getElementById('btncontrast');
         const btnlogarithm = document.getElementById('btnlogarithm');
         const btnbox = document.getElementById('btnbox');
+        const btngauss = document.getElementById('btngauss');
         const applyGammaCheckbox = document.getElementById('applyGamma');
         const fileInput = document.getElementById('file-input');
 
@@ -157,6 +163,8 @@
         const contrastRange = document.getElementById('contrast');
         const logarithmRange = document.getElementById('logarithm');
         const boxRange = document.getElementById('box');
+        const gaussRange = document.getElementById('gauss');
+        const gausssigma = document.getElementById('gausssigma');
 
         const redgamma = document.getElementById('red-gamma');
         const greengamma = document.getElementById('green-gamma');
@@ -166,6 +174,7 @@
         const contrastvalue = document.getElementById('contrast-value');
         const logarithmvalue = document.getElementById('logarithm-value');
         const boxvalue = document.getElementById('box-value');
+        const gaussvalue = document.getElementById('gauss-value');
 
         const redRangeValue = document.getElementById('red-range-value');
         const greenRangeValue = document.getElementById('green-range-value');
@@ -191,6 +200,9 @@
         });
         boxRange.addEventListener('input', function () {
             boxvalue.textContent = this.value;
+        });
+        gaussRange.addEventListener('input', function () {
+            gaussvalue.textContent = this.value;
         });
 
         redgamma.addEventListener('input', function () {
@@ -251,6 +263,15 @@
         btnbox.addEventListener('click', function () {
             url = '@Url.Action("BoxFilter", "Home", new { box = "PLACEHOLDER_BOX" })';
             url = url.replace("PLACEHOLDER_BOX", parseInt(boxvalue.textContent));
+            console.log(url);
+            uploadedImage.src = url;
+        });
+        btngauss.addEventListener('click', function () {
+            var url = '@Url.Action("GaussFilter", "Home", new { id = "PLACEHOLDER_GAUSS", sigma = "PLACEHOLDER_SIGMA"})';
+            url = url
+                .replace("PLACEHOLDER_GAUSS", gaussvalue.textContent.toString())
+                .replace("PLACEHOLDER_SIGMA", gausssigma.value.toString())
+                .replace("&amp;", "?");
             console.log(url);
             uploadedImage.src = url;
         });
