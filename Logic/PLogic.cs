@@ -294,7 +294,7 @@ namespace Photoshop.Logic
             return true;
         }
 
-        public int[] CreateHistogram()
+        public int[] CreateHistogramWithPointer()
         {
             Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
 
@@ -323,6 +323,120 @@ namespace Photoshop.Logic
             bitmap.UnlockBits(bmpData);
 
             return histogram;
+        }
+        public int[] CreateHistogram()
+        {
+            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
+            int[] histogram = new int[256]; // 256 possible intensity values
+
+            for (int y = 0; y < bitmap.Height; y++)
+            {
+                for (int x = 0; x < bitmap.Width; x++)
+                {
+                    Color pixel = bitmap.GetPixel(x, y);
+                    int intensity = (int)(0.299 * pixel.R + 0.587 * pixel.G + 0.114 * pixel.B);
+                    //int intensity = (int)(pixel.R + pixel.G + pixel.B);
+                    histogram[intensity]++;
+                }
+            }
+
+            return histogram;
+        }
+        public int[] CreateHistogram254()
+        {
+            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
+            int[] histogram = new int[256]; // 256 possible intensity values
+
+            for (int y = 0; y < bitmap.Height; y++)
+            {
+                for (int x = 0; x < bitmap.Width; x++)
+                {
+                    Color pixel = bitmap.GetPixel(x, y);
+                    int intensity = (int)(0.299 * pixel.R + 0.587 * pixel.G + 0.114 * pixel.B);
+                    //int intensity = (int)(pixel.R + pixel.G + pixel.B);
+                    if (intensity!=255)
+                    {
+                        histogram[intensity]++;
+                    }
+                }
+            }
+
+            return histogram;
+        }
+
+        private int[] CalculateCDF(int[] histogram)
+        {
+            int[] cdf = new int[256];
+            cdf[0] = histogram[0];
+
+            for (int i = 1; i < 256; i++)
+            {
+                cdf[i] = cdf[i - 1] + histogram[i];
+            }
+
+            return cdf;
+        }
+        private int[] CalculateCDFWithEq(int[] histogram)
+        {
+            int[] cdf = new int[256];
+            cdf[0] = histogram[0];
+
+            for (int i = 1; i < 256; i++)
+            {
+                cdf[i] = cdf[i - 1] + histogram[i];
+            }
+
+            // Calculate equalization factor
+            double equalizationFactor = 255.0 / (cdf[255] + 1);
+
+            // Perform equalization with equalization factor
+            for (int i = 0; i < 256; i++)
+            {
+                cdf[i] = (int)(cdf[i] * equalizationFactor);
+            }
+
+            return cdf;
+        }
+
+        public bool HistogramEqualization()
+        {
+            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
+
+            // Create a copy of the input bitmap to avoid modifying the original
+            Bitmap outputBitmap = new Bitmap(bitmap);
+
+            // Lock the bits of the outputBitmap for direct access
+            BitmapData bitmapData = outputBitmap.LockBits(new Rectangle(0, 0, outputBitmap.Width, outputBitmap.Height),
+                ImageLockMode.ReadWrite, outputBitmap.PixelFormat);
+
+            int bytesPerPixel = Image.GetPixelFormatSize(outputBitmap.PixelFormat) / 8;
+            int stride = bitmapData.Stride;
+            int[] cdf = CalculateCDFWithEq(CreateHistogram254());
+            unsafe
+            {
+                byte* ptr = (byte*)bitmapData.Scan0;
+
+                for (int y = 0; y < outputBitmap.Height; y++)
+                {
+                    for (int x = 0; x < outputBitmap.Width; x++)
+                    {
+                        Color pixel = outputBitmap.GetPixel(x, y);
+                        int intensity = (int)(0.299 * pixel.R + 0.587 * pixel.G + 0.114 * pixel.B);
+
+                        // Calculate the new intensity using the CDF
+                        int newIntensity = cdf[intensity];
+
+                        // Update the pixel with the new intensity
+                        ptr[(y * stride) + (x * bytesPerPixel) + 0] = (byte)newIntensity; // Red
+                        ptr[(y * stride) + (x * bytesPerPixel) + 1] = (byte)newIntensity; // Green
+                        ptr[(y * stride) + (x * bytesPerPixel) + 2] = (byte)newIntensity; // Blue
+                    }
+                }
+            }
+
+            Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
+
+            return true;
         }
 
         public void AddNew(IFormFile img)

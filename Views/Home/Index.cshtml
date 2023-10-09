@@ -114,6 +114,8 @@
                 <br>
                 <input type="range" id="logarithm" min="-100" max="100" step="1" value="0"><span id="logarithm-value">0</span>
                 <br>
+                <button id="btnhisteq">Histogram Equalization</button>
+                <br>
                 <button id="applyGamma">Apply Gamma Correction</button>
                 <br>
                 <label for="red-gamma">Red Gamma:</label>
@@ -215,20 +217,25 @@
         });
         btnbrightness.addEventListener('click', function () {
             url = '@Url.Action("Brightness", "Home", new { brightness = "PLACEHOLDER_BRIGHTNESS" })';
-            url = url.replace("PLACEHOLDER_BRIGHTNESS", parseInt(brightnessvalue.textContent))
-            console.log(url)
+            url = url.replace("PLACEHOLDER_BRIGHTNESS", parseInt(brightnessvalue.textContent));
+            console.log(url);
             uploadedImage.src = url;
         });
         btncontrast.addEventListener('click', function () {
             url = '@Url.Action("Contrast", "Home", new { contrast = "PLACEHOLDER_CONTRAST" })';
-            url = url.replace("PLACEHOLDER_CONTRAST", parseInt(contrastvalue.textContent))
-            console.log(url)
+            url = url.replace("PLACEHOLDER_CONTRAST", parseInt(contrastvalue.textContent));
+            console.log(url);
             uploadedImage.src = url;
         });
         btnlogarithm.addEventListener('click', function () {
             url = '@Url.Action("Logarithm", "Home", new { log = "PLACEHOLDER_LOGARITHM" })';
-            url = url.replace("PLACEHOLDER_LOGARITHM", parseInt(logarithmvalue.textContent))
-            console.log(url)
+            url = url.replace("PLACEHOLDER_LOGARITHM", parseInt(logarithmvalue.textContent));
+            console.log(url);
+            uploadedImage.src = url;
+        });
+        btnhisteq.addEventListener('click', function () {
+            url = '@Url.Action("HistogramEq", "Home")';
+            console.log(url);
             uploadedImage.src = url;
         });
 
@@ -270,7 +277,7 @@
 
                         // Create the rectangle (bar)
                         const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                        
+
                         rect.setAttribute('x', x);
                         rect.setAttribute('y', y);
                         rect.setAttribute('width', barWidth);
