@@ -576,56 +576,6 @@ namespace Photoshop.Logic
             Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
             return true;
         }
-        public bool ApplySobelEdgeDetection3()
-        {
-            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
-            int width = bitmap.Width;
-            int height = bitmap.Height;
-
-            Bitmap edgeImage = new Bitmap(width, height, PixelFormat.Format24bppRgb);
-
-            int[,] sobelX = new int[,]
-            {
-        { 1, 0, -1 },
-        { 2, 0, -2 },
-        { 1, 0, -1 }
-            };
-
-            int[,] sobelY = new int[,]
-            {
-        { 1, 2, 1 },
-        { 0, 0, 0 },
-        { -1, -2, -1 }
-            };
-
-            for (int y = 1; y < height - 1; y++)
-            {
-                for (int x = 1; x < width - 1; x++)
-                {
-                    int gx = 0;
-                    int gy = 0;
-
-                    for (int j = -1; j <= 1; j++)
-                    {
-                        for (int i = -1; i <= 1; i++)
-                        {
-                            byte* pixelPtr = ptr + (y + j) * stride + (x + i) * 3;
-
-                            gx += sobelX[j + 1, i + 1] * pixelPtr[2]; // Piros komponens
-                            gy += sobelY[j + 1, i + 1] * pixelPtr[2]; // Piros komponens
-                        }
-                    }
-
-                    int gradient = Math.Abs(gx) + Math.Abs(gy);
-
-                    Color edgeColor = Color.FromArgb(gradient, gradient, gradient);
-                    edgeImage.SetPixel(x, y, edgeColor);
-                }
-            }
-
-            Images.Push(ConvertBitmapToByteArray(edgeImage, ImageFormat.Jpeg));
-            return true;
-        }
 
         public bool ApplySobelEdgeDetection2()
         {

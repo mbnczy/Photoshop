@@ -98,7 +98,7 @@ namespace Photoshop.Controllers
 
         public IActionResult Sobel()
         {
-            PLogic.Instance.ApplySobelEdgeDetection3();
+            PLogic.Instance.ApplySobelEdgeDetection2();
 
             byte[] img = PLogic.Instance.GetImage();
             return new FileContentResult(img, "image/jpeg");
