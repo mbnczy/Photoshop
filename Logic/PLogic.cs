@@ -576,6 +576,199 @@ namespace Photoshop.Logic
             Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
             return true;
         }
+        public bool ApplySobelEdgeDetection3()
+        {
+            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
+            int width = bitmap.Width;
+            int height = bitmap.Height;
+
+            Bitmap edgeImage = new Bitmap(width, height, PixelFormat.Format24bppRgb);
+
+            int[,] sobelX = new int[,]
+            {
+        { 1, 0, -1 },
+        { 2, 0, -2 },
+        { 1, 0, -1 }
+            };
+
+            int[,] sobelY = new int[,]
+            {
+        { 1, 2, 1 },
+        { 0, 0, 0 },
+        { -1, -2, -1 }
+            };
+
+            for (int y = 1; y < height - 1; y++)
+            {
+                for (int x = 1; x < width - 1; x++)
+                {
+                    int gx = 0;
+                    int gy = 0;
+
+                    for (int j = -1; j <= 1; j++)
+                    {
+                        for (int i = -1; i <= 1; i++)
+                        {
+                            byte* pixelPtr = ptr + (y + j) * stride + (x + i) * 3;
+
+                            gx += sobelX[j + 1, i + 1] * pixelPtr[2]; // Piros komponens
+                            gy += sobelY[j + 1, i + 1] * pixelPtr[2]; // Piros komponens
+                        }
+                    }
+
+                    int gradient = Math.Abs(gx) + Math.Abs(gy);
+
+                    Color edgeColor = Color.FromArgb(gradient, gradient, gradient);
+                    edgeImage.SetPixel(x, y, edgeColor);
+                }
+            }
+
+            Images.Push(ConvertBitmapToByteArray(edgeImage, ImageFormat.Jpeg));
+            return true;
+        }
+
+        public bool ApplySobelEdgeDetection2()
+        {
+            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
+
+            int width = bitmap.Width;
+            int height = bitmap.Height;
+
+            int[,] sobelX = new int[,]
+            {
+                { 1, 0, -1 },
+                { 2, 0, -2 },
+                { 1, 0, -1 }
+            };
+
+            int[,] sobelY = new int[,]
+            {
+                { 1, 2, 1 },
+                { 0, 0, 0 },
+                { -1, -2, -1 }
+            };
+
+            BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, width, height),
+                ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+
+            unsafe
+            {
+                byte* ptr = (byte*)bitmapData.Scan0.ToPointer();
+                int stride = bitmapData.Stride;
+
+                for (int y = 1; y < height - 1; y++)
+                {
+                    for (int x = 1; x < width - 1; x++)
+                    {
+                        int[,] nrsobelX = new int[,]
+                        {
+                            { 1, 0, -1 },
+                            { 2, 0, -2 },
+                            { 1, 0, -1 }
+                        };
+                        int[,] nrsobelY = new int[,]
+                        {
+                            { 1, 2, 1 },
+                            { 0, 0, 0 },
+                            { -1, -2, -1 }
+                        };
+                        int[,] ngsobelX = new int[,]
+                        {
+                            { 1, 0, -1 },
+                            { 2, 0, -2 },
+                            { 1, 0, -1 }
+                        };
+                        int[,] ngsobelY = new int[,]
+                        {
+                            { 1, 2, 1 },
+                            { 0, 0, 0 },
+                            { -1, -2, -1 }
+                        };
+                        int[,] nbsobelX = new int[,]
+                        {
+                            { 1, 0, -1 },
+                            { 2, 0, -2 },
+                            { 1, 0, -1 }
+                        };
+                        int[,] nbsobelY = new int[,]
+                        {
+                            { 1, 2, 1 },
+                            { 0, 0, 0 },
+                            { -1, -2, -1 }
+                        };
+
+
+                        for (int j = -1; j <= 1; j++)
+                        {
+                            for (int i = -1; i <= 1; i++)
+                            {
+                                byte* pixelPtr = ptr + (y + j) * stride + (x + i) * 3;
+
+                                nrsobelX[j + 1, i + 1] *= pixelPtr[2];
+                                nrsobelY[j + 1, i + 1] *= pixelPtr[2];
+                                ngsobelX[j + 1, i + 1] *= pixelPtr[1];
+                                ngsobelY[j + 1, i + 1] *= pixelPtr[1];
+                                nbsobelX[j + 1, i + 1] *= pixelPtr[0];
+                                nbsobelY[j + 1, i + 1] *= pixelPtr[0];
+                            }
+                        }
+
+                        int rgradX = Math.Abs(nrsobelX[0, 2] - nrsobelX[0, 0] +
+                            nrsobelX[1, 2] - nrsobelX[1, 0] +
+                            nrsobelX[2, 2] - nrsobelX[2, 0]);
+                        int rgradY = Math.Abs(nrsobelX[2, 0] - nrsobelX[0, 0] +
+                            nrsobelX[2, 1] - nrsobelX[0, 1] +
+                            nrsobelX[2, 2] - nrsobelX[0, 2]);
+                        int ggradX = Math.Abs(ngsobelX[0, 2] - ngsobelX[0, 0] +
+                            ngsobelX[1, 2] - ngsobelX[1, 0] +
+                            ngsobelX[2, 2] - ngsobelX[2, 0]);
+                        int ggradY = Math.Abs(ngsobelX[2, 0] - ngsobelX[0, 0] +
+                            ngsobelX[2, 1] - ngsobelX[0, 1] +
+                            ngsobelX[2, 2] - ngsobelX[0, 2]);
+                        int bgradX = Math.Abs(nbsobelX[0, 2] - nbsobelX[0, 0] +
+                            nbsobelX[1, 2] - nbsobelX[1, 0] +
+                            nbsobelX[2, 2] - nbsobelX[2, 0]);
+                        int bgradY = Math.Abs(nrsobelX[2, 0] - nrsobelX[0, 0] +
+                            nbsobelX[2, 1] - nbsobelX[0, 1] +
+                            nbsobelX[2, 2] - nbsobelX[0, 2]);
+
+                        //int gradX = rgradX + ggradX + bgradX;
+                        //int gradY = rgradY + ggradY + bgradY;
+
+
+                        double magnR = Math.Sqrt((rgradX * rgradX) + (rgradY * rgradY));
+                        double magnG = Math.Sqrt((ggradX * ggradX) + (ggradY * ggradY));
+                        double magnB = Math.Sqrt((bgradX * bgradX) + (bgradY * bgradY));
+
+                        double maxmagn = Math.Max(Math.Max(magnR, magnG), magnB)/3;
+                        
+                        // Gradiens nagyság számítása
+
+                        // Küszöbölés: Ha a gradiens nagysága meghaladja a küszöbértéket, ott él van
+
+                        byte* outputPixelPtr = ptr + y * stride + x * 3;
+                        if (!(maxmagn > 300))
+                        {
+                            outputPixelPtr[2] = (byte)0;
+                            outputPixelPtr[1] = (byte)0;
+                            outputPixelPtr[0] = (byte)0;
+                        }
+                        else
+                        {
+                            outputPixelPtr[2] = (byte)255;
+                            outputPixelPtr[1] = (byte)255;
+                            outputPixelPtr[0] = (byte)255;
+                        }
+                        
+                    }
+                }
+            }
+
+            bitmap.UnlockBits(bitmapData);
+
+            Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
+            return true;
+        }
 
         public bool ApplySobelEdgeDetection()
         {
@@ -634,13 +827,12 @@ namespace Photoshop.Logic
                         // Gradiens nagyság számítása
 
                         // Küszöbölés: Ha a gradiens nagysága meghaladja a küszöbértéket, ott él van
-                        int redGradient = Math.Abs(gxRed) + Math.Abs(gyRed);
-                        int greenGradient = Math.Abs(gxGreen) + Math.Abs(gyGreen);
-                        int blueGradient = Math.Abs(gxBlue) + Math.Abs(gyBlue);
-                        int gradientMagnitude = redGradient + greenGradient + blueGradient;
-                        if (!(gradientMagnitude > 750))
+                        double redGradient = Math.Sqrt((gxRed * gxRed) + (gyRed * gyRed));
+                        double greenGradient = Math.Sqrt((gxGreen * gxGreen) + (gyGreen * gyGreen));
+                        double blueGradient = Math.Sqrt((gxBlue * gxBlue) + (gyBlue * gyBlue));
+                        double gradientMagnitude = (redGradient + greenGradient + blueGradient)/3;
+                        if (!(gradientMagnitude > 100))
                         {
-                            // Él jelenik meg a kimeneti képen
                             redGradient = 0;
                             greenGradient = 0;
                             blueGradient = 0;
