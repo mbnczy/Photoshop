@@ -32,7 +32,6 @@ namespace Photoshop.Controllers
             return new FileContentResult(img, "image/jpeg");
         }
 
-
         public IActionResult Invert()
         {
             PLogic.Instance.Invert();
@@ -96,6 +95,15 @@ namespace Photoshop.Controllers
             byte[] img = PLogic.Instance.GetImage();
             return new FileContentResult(img, "image/jpeg");
         }
+
+        public IActionResult Sobel()
+        {
+            PLogic.Instance.ApplySobelEdgeDetection();
+
+            byte[] img = PLogic.Instance.GetImage();
+            return new FileContentResult(img, "image/jpeg");
+        }
+
         public IActionResult GetActualImage()
         {
             if (PLogic.Instance.Images.Count!=0)

@@ -577,7 +577,109 @@ namespace Photoshop.Logic
             return true;
         }
 
+        public bool ApplySobelEdgeDetection()
+        {
+            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
 
+            int width = bitmap.Width;
+            int height = bitmap.Height;
+
+            int[,] sobelX = new int[,]
+            {
+                { 1, 0, -1 },
+                { 2, 0, -2 },
+                { 1, 0, -1 }
+            };
+
+            int[,] sobelY = new int[,]
+            {
+                { 1, 2, 1 },
+                { 0, 0, 0 },
+                { -1, -2, -1 }
+            };
+
+            BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, width, height),
+                ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+
+            unsafe
+            {
+                byte* ptr = (byte*)bitmapData.Scan0.ToPointer();
+                int stride = bitmapData.Stride;
+
+                for (int y = 1; y < height - 1; y++)
+                {
+                    for (int x = 1; x < width - 1; x++)
+                    {
+                        int gxRed = 0, gxGreen = 0, gxBlue = 0;
+                        int gyRed = 0, gyGreen = 0, gyBlue = 0;
+
+                        for (int j = -1; j <= 1; j++)
+                        {
+                            for (int i = -1; i <= 1; i++)
+                            {
+                                byte* pixelPtr = ptr + (y + j) * stride + (x + i) * 3;
+                                int sobelXValue = sobelX[j + 1, i + 1];
+                                int sobelYValue = sobelY[j + 1, i + 1];
+
+                                gxRed += pixelPtr[2] * sobelXValue;
+                                gxGreen += pixelPtr[1] * sobelXValue;
+                                gxBlue += pixelPtr[0] * sobelXValue;
+
+                                gyRed += pixelPtr[2] * sobelYValue;
+                                gyGreen += pixelPtr[1] * sobelYValue;
+                                gyBlue += pixelPtr[0] * sobelYValue;
+                            }
+                        }
+
+                        // Gradiens nagyság számítása
+
+                        // Küszöbölés: Ha a gradiens nagysága meghaladja a küszöbértéket, ott él van
+                        int redGradient = Math.Abs(gxRed) + Math.Abs(gyRed);
+                        int greenGradient = Math.Abs(gxGreen) + Math.Abs(gyGreen);
+                        int blueGradient = Math.Abs(gxBlue) + Math.Abs(gyBlue);
+                        int gradientMagnitude = redGradient + greenGradient + blueGradient;
+                        if (!(gradientMagnitude > 750))
+                        {
+                            // Él jelenik meg a kimeneti képen
+                            redGradient = 0;
+                            greenGradient = 0;
+                            blueGradient = 0;
+                        }
+                        else
+                        {
+                            redGradient = 100;
+                            greenGradient = 100;
+                            blueGradient = 100;
+                        }
+                        
+                        byte* outputPixelPtr = ptr + y * stride + x * 3;
+                        //outputPixelPtr[2] = (byte)Math.Min(255, redGradient);
+                        //outputPixelPtr[1] = (byte)Math.Min(255, greenGradient);
+                        //outputPixelPtr[0] = (byte)Math.Min(255, blueGradient);
+                        //int darknessFactor = 6;
+                        //outputPixelPtr[2] = (byte)Math.Max(0, outputPixelPtr[2] - redGradient / darknessFactor);
+                        //outputPixelPtr[1] = (byte)Math.Max(0, outputPixelPtr[1] - greenGradient / darknessFactor);
+                        //outputPixelPtr[0] = (byte)Math.Max(0, outputPixelPtr[0] - blueGradient / darknessFactor);
+
+                        // Küszöbölés hozzáadása
+                        //int threshold = 100;
+                        //int thresholdedRed = redGradient > threshold ? 255 : 0;
+                        //int thresholdedGreen = greenGradient > threshold ? 255 : 0;
+                        //int thresholdedBlue = blueGradient > threshold ? 255 : 0;
+
+                        // Kiemelt élek a kimeneti képen, de sötétedés nélkül
+                        outputPixelPtr[2] = (byte)redGradient;
+                        outputPixelPtr[1] = (byte)greenGradient;
+                        outputPixelPtr[0] = (byte)blueGradient;
+                    }
+                }
+            }
+
+            bitmap.UnlockBits(bitmapData);
+
+            Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
+            return true;
+        }
 
         public void AddNew(IFormFile img)
         {
