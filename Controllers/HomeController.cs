@@ -32,7 +32,6 @@ namespace Photoshop.Controllers
                 Convert.ToDouble(splitted[1]),
                 Convert.ToDouble(splitted[2])
             );
-            //PLogic.Instance.Gamma(0, 1, 0);
 
             byte[] img = PLogic.Instance.GetImage();
             return new FileContentResult(img, "image/jpeg");
@@ -76,7 +75,7 @@ namespace Photoshop.Controllers
 
         public IActionResult Histogram()
         {
-            int[] hist = PLogic.Instance.CreateHistogram254();
+            int[] hist = PLogic.Instance.CreateHistogram2();
             return Ok(hist);
         }
 
