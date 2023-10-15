@@ -143,8 +143,8 @@
 
 
                 <button id="btnhist">Make Histogram</button>
+                <label>Show numbers on the histogram:</label>
                 <input type="checkbox" id="histnums"/>
-                <label>Show numbers on the histogram</label>
 
             </div>
         </div>
@@ -345,7 +345,7 @@
 
                         svg.appendChild(rect);
                         // Create and append the value label
-                        if (valueLabel != 0)
+                        if (document.getElementById("histnums").checked && valueLabel != 0)
                         {
                             const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                             label.setAttribute('x', x + barWidth / 2);
