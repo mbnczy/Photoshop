@@ -75,7 +75,7 @@ namespace Photoshop.Controllers
 
         public IActionResult Histogram()
         {
-            int[] hist = PLogic.Instance.CreateHistogram2();
+            int[] hist = PLogic.Instance.CreateHistogram();
             return Ok(hist);
         }
 
