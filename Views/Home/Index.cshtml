@@ -80,8 +80,6 @@
 </head>
 <body>
     <div><h1>Image Manipulation</h1></div>
-
-
     <div class="container">
         <div class="image-column">
             <div id="image-container">
@@ -127,6 +125,10 @@
                 <br>
                 <button id="btnsobel">Apply Sobel</button>
                 <br>
+                <button id="btnlaplace">Apply Laplace</button>
+                <br>
+                <button id="btnharris">Apply Harris</button>
+                <br>
                 <button id="applyGamma">Apply Gamma Correction</button>
                 <br>
                 <label for="red-gamma">Red Gamma:</label>
@@ -141,7 +143,8 @@
 
 
                 <button id="btnhist">Make Histogram</button>
-
+                <input type="checkbox" id="histnums"/>
+                <label>Show numbers on the histogram</label>
 
             </div>
         </div>
@@ -159,6 +162,8 @@
         const btnbox = document.getElementById('btnbox');
         const btngauss = document.getElementById('btngauss');
         const btnsobel = document.getElementById('btnsobel');
+        const btnlaplace = document.getElementById('btnlaplace');
+        const btnharris = document.getElementById('btnharris');
         const applyGammaCheckbox = document.getElementById('applyGamma');
         const fileInput = document.getElementById('file-input');
 
@@ -280,6 +285,16 @@
         });
         btnsobel.addEventListener('click', function () {
             url = '@Url.Action("Sobel", "Home")';
+            console.log(url);
+            uploadedImage.src = url;
+        });
+        btnlaplace.addEventListener('click', function () {
+            url = '@Url.Action("Laplace", "Home")';
+            console.log(url);
+            uploadedImage.src = url;
+        });
+        btnharris.addEventListener('click', function () {
+            url = '@Url.Action("Harris", "Home")';
             console.log(url);
             uploadedImage.src = url;
         });

@@ -104,6 +104,21 @@ namespace Photoshop.Controllers
             return new FileContentResult(img, "image/jpeg");
         }
 
+        public IActionResult Laplace()
+        {
+            PLogic.Instance.ApplyLoGEdgeDetection();
+
+            byte[] img = PLogic.Instance.GetImage();
+            return new FileContentResult(img, "image/jpeg");
+        }
+        public IActionResult Harris()
+        {
+            PLogic.Instance.ApplyHarrisCornerDetection();
+
+            byte[] img = PLogic.Instance.GetImage();
+            return new FileContentResult(img, "image/jpeg");
+        }
+
         public IActionResult GetActualImage()
         {
             if (PLogic.Instance.Images.Count!=0)

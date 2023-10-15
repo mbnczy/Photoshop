@@ -822,6 +822,231 @@ namespace Photoshop.Logic
             Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
             return true;
         }
+        public bool ApplyLaplaceEdgeDetection()
+        {
+            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
+            int width = bitmap.Width;
+            int height = bitmap.Height;
+
+            BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, width, height),
+                ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+
+            int[,] laplaceKernel = new int[,]
+            {
+                { 0, 1, 0 },
+                { 1, -4, 1 },
+                { 0, 1, 0 }
+            };
+
+            unsafe
+            {
+                byte* ptr = (byte*)bitmapData.Scan0.ToPointer();
+                int stride = bitmapData.Stride;
+                for (int y = 1; y < height - 1; y++)
+                {
+                    for (int x = 1; x < width - 1; x++)
+                    {
+                        int laplaceSum = 0;
+
+                        for (int j = -1; j <= 1; j++)
+                        {
+                            for (int i = -1; i <= 1; i++)
+                            {
+                                byte* pixelPtr = ptr + (y + j) * stride + (x + i) * 3;
+
+                                laplaceSum += laplaceKernel[j + 1, i + 1] * pixelPtr[2]; 
+                            }
+                        }
+
+                        int newPixelValue = Math.Min(Math.Max(laplaceSum, 0), 255);
+                        Color edgeColor = Color.FromArgb(newPixelValue, newPixelValue, newPixelValue);
+                        bitmap.SetPixel(x, y, edgeColor);
+                    }
+                }
+            }
+
+            Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
+            return true;
+        }
+        public bool ApplyLoGEdgeDetection()
+        {
+            //double[,] gaussianKernel = new double[,]
+            //{
+            //    { 0.0625, 0.125, 0.0625 },
+            //    { 0.125, 0.25, 0.125 },
+            //    { 0.0625, 0.125, 0.0625 }
+            //};
+
+            int[,] laplaceKernel = new int[,]
+            {
+                { 0, 1, 0 },
+                { 1, -4, 1 },
+                { 0, 1, 0 }
+            };
+
+            // Apply Gaussian filter to the image
+            this.ApplyGaussianFilter(5, 3);
+
+
+            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
+            int width = bitmap.Width;
+            int height = bitmap.Height;
+
+            BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, width, height),
+                ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+
+            unsafe
+            {
+                byte* ptr = (byte*)bitmapData.Scan0.ToPointer();
+                int stride = bitmapData.Stride;
+
+                for (int y = 1; y < height - 1; y++)
+                {
+                    for (int x = 1; x < width - 1; x++)
+                    {
+                        int laplaceSum = 0;
+
+                        for (int j = -1; j <= 1; j++)
+                        {
+                            for (int i = -1; i <= 1; i++)
+                            {
+                                byte* pixelPtr = ptr + (y + j) * stride + (x + i) * 3;
+
+                                laplaceSum += laplaceKernel[j + 1, i + 1] * pixelPtr[2]; // Red channel
+                            }
+                        }
+
+                        int newPixelValue = Math.Min(Math.Max(laplaceSum, 0), 255);
+                        Color edgeColor = Color.FromArgb(newPixelValue, newPixelValue, newPixelValue);
+                        bitmap.SetPixel(x, y, edgeColor);
+                    }
+                }
+            }
+
+            Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
+            return true;
+        }
+
+        private void ApplyFilter(Bitmap bitmap, double[,] filter)
+        {
+            int width = bitmap.Width;
+            int height = bitmap.Height;
+
+            Bitmap tempImage = new Bitmap(width, height, PixelFormat.Format24bppRgb);
+
+            int filterSize = filter.GetLength(0);
+            int filterRadius = filterSize / 2;
+
+            for (int y = filterRadius; y < height - filterRadius; y++)
+            {
+                for (int x = filterRadius; x < width - filterRadius; x++)
+                {
+                    double redSum = 0.0;
+
+                    for (int j = -filterRadius; j <= filterRadius; j++)
+                    {
+                        for (int i = -filterRadius; i <= filterRadius; i++)
+                        {
+                            Color pixel = bitmap.GetPixel(x + i, y + j);
+                            redSum += pixel.R * filter[j + filterRadius, i + filterRadius];
+                        }
+                    }
+
+                    int newRedValue = (int)Math.Min(Math.Max(redSum, 0), 255);
+                    Color newColor = Color.FromArgb(newRedValue, newRedValue, newRedValue);
+                    tempImage.SetPixel(x, y, newColor);
+                }
+            }
+
+            using (Graphics g = Graphics.FromImage(bitmap))
+            {
+                g.DrawImage(tempImage, new Point(0, 0));
+            }
+        }
+
+        public bool ApplyHarrisCornerDetection()
+        {
+            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
+            int width = bitmap.Width;
+            int height = bitmap.Height;
+            int stride = width * 3;
+            int threshold = 1000;
+            double k = -0.04; // Harris corner constant (adjust as needed)
+
+            List<Point> corners = new List<Point>();
+
+            BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, width, height),
+                ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+
+            unsafe
+            {
+                byte* inputPtr = (byte*)bitmapData.Scan0.ToPointer();
+                int offset = stride - width * 3;
+
+                for (int y = 0; y < height; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        // Calculate Harris corner response
+                        double IxIx = 0, IyIy = 0, IxIy = 0;
+
+                        for (int j = -1; j <= 1; j++)
+                        {
+                            for (int i = -1; i <= 1; i++)
+                            {
+                                byte* pixelPtr = inputPtr + (y + j) * stride + (x + i) * 3;
+                                double grayValue = 0.299 * pixelPtr[2] + 0.587 * pixelPtr[1] + 0.114 * pixelPtr[0];
+
+                                IxIx += grayValue * grayValue;
+                                IyIy += grayValue * grayValue;
+                                IxIy += grayValue * grayValue;
+                            }
+                        }
+
+                        // Harris corner response formula
+                        double detM = (IxIx * IyIy) - (IxIy * IxIy);
+                        double traceM = IxIx + IyIy;
+                        double cornerResponse = detM - k * (traceM * traceM);
+
+                        // Mark the pixel as a corner in the input image
+                        if (cornerResponse > threshold)
+                        {
+                            
+                            corners.Add(new Point(x, y));
+                        }
+                        
+                        inputPtr += 3;
+                    }
+
+                    inputPtr += offset;
+                }
+            }
+            
+            using (Graphics graphics = Graphics.FromImage(bitmap))
+            using (Pen pen = new Pen(Color.Red, 2)) // Red pen for drawing corners
+            {
+                foreach (Point corner in corners)
+                {
+                    int markerSize = 1; // Size of the marker
+                    int x = corner.X - markerSize / 2;
+                    int y = corner.Y - markerSize / 2;
+
+                    graphics.DrawEllipse(pen, x, y, markerSize, markerSize);
+                }
+            }
+
+
+            bitmap.UnlockBits(bitmapData);
+
+            Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
+
+
+            return true;
+        }
+
+
+
+
 
         public void AddNew(IFormFile img)
         {
