@@ -24,9 +24,15 @@ namespace Photoshop.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        public IActionResult Gamma(double red, double green, double blue)
+        public IActionResult Gamma(string colors)
         {
-            PLogic.Instance.Gamma(red, green, blue);
+            string[] splitted = colors.Split(";");
+            PLogic.Instance.Gamma(
+                Convert.ToDouble(splitted[0]),
+                Convert.ToDouble(splitted[1]),
+                Convert.ToDouble(splitted[2])
+            );
+            //PLogic.Instance.Gamma(0, 1, 0);
 
             byte[] img = PLogic.Instance.GetImage();
             return new FileContentResult(img, "image/jpeg");

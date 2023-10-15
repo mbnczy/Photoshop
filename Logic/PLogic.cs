@@ -274,11 +274,11 @@ namespace Photoshop.Logic
                     for (int x = 0; x < nWidth; ++x)
                     {
                         if (x % 3 == 0) // Red component
-                            p[0] = redGamma[p[0]];
+                            p[0] = blueGamma[p[0]];
                         else if (x % 3 == 1) // Green component
-                            p[1] = greenGamma[p[1]];
+                            p[1] = redGamma[p[1]];
                         else if (x % 3 == 2) // Blue component
-                            p[2] = blueGamma[p[2]];
+                            p[2] = greenGamma[p[2]];
 
                         ++p;
                     }
@@ -293,6 +293,53 @@ namespace Photoshop.Logic
 
             return true;
         }
+        public bool Gamma2(double gammaRed, double gammaGreen, double gammaBlue)
+        {
+            Bitmap b = ConvertByteArrayToBitmap(Images.Peek());
+            BitmapData bmData = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
+                ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+            int stride = bmData.Stride;
+            System.IntPtr Scan0 = bmData.Scan0;
+            int nWidth = b.Width * 3;
+            // Define the gamma correction factors for each channel
+            double gammaCorrectionRed = 1.0 / gammaRed;
+            double gammaCorrectionGreen = 1.0 / gammaGreen;
+            double gammaCorrectionBlue = 1.0 / gammaBlue;
+
+            
+            int bytesPerPixel = Image.GetPixelFormatSize(b.PixelFormat) / 8;
+
+            unsafe
+            {
+                byte* ptr = (byte*)bmData.Scan0;
+
+                for (int y = 0; y < b.Height; y++)
+                {
+                    for (int x = 0; x < b.Width; x++)
+                    {
+                        int offset = y * bmData.Stride + x * bytesPerPixel;
+
+                        byte red = ptr[offset + 2];
+                        byte green = ptr[offset + 1];
+                        byte blue = ptr[offset];
+
+                        byte newRed = (byte)(255 * Math.Pow(red / 255.0, gammaCorrectionRed));
+                        byte newGreen = (byte)(255 * Math.Pow(green / 255.0, gammaCorrectionGreen));
+                        byte newBlue = (byte)(255 * Math.Pow(blue / 255.0, gammaCorrectionBlue));
+
+                        ptr[offset + 2] = newRed;
+                        ptr[offset + 1] = newGreen;
+                        ptr[offset] = newBlue;
+                    }
+                }
+            }
+
+            b.UnlockBits(bmData);
+
+            Images.Push(ConvertBitmapToByteArray(b, ImageFormat.Jpeg));
+            return true;
+        }
+
 
         public int[] CreateHistogramWithPointer()
         {

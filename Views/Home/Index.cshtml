@@ -364,18 +364,26 @@
         });
 
         applyGammaCheckbox.addEventListener('click', function () {
-            url = '@Url.Action("Gamma", "Home", new {
+            @*url = '@Url.Action("Gamma", "Home", new {
                       red = "PLACEHOLDER_RED",
                       green = "PLACEHOLDER_GREEN",
-                      blue = "PLACEHOLDER_BLUE",
+                      blue = "PLACEHOLDER_BLUE"
                 })';
 
-                url = url
-                    .replace("PLACEHOLDER_RED", parseInt(redRangeValue.textContent))
-                    .replace("PLACEHOLDER_GREEN", parseInt(greenRangeValue.textContent))
-                    .replace("PLACEHOLDER_BLUE", parseInt(blueRangeValue.textContent));
-                console.log(url)
-                uploadedImage.src = url;
+            url = url
+                .replace("PLACEHOLDER_RED", parseInt(redRangeValue.textContent))
+                .replace("PLACEHOLDER_GREEN", parseInt(greenRangeValue.textContent))
+                .replace("PLACEHOLDER_BLUE", parseInt(blueRangeValue.textContent));*@
+            url = '@Url.Action("Gamma", "Home", new {
+                      colors="PLACEHOLDER_COLORS",
+                })'
+            url = url
+                .replace("PLACEHOLDER_COLORS",
+                    parseInt(redRangeValue.textContent) + ";" +
+                    parseInt(greenRangeValue.textContent) + ";" +
+                    parseInt(blueRangeValue.textContent));
+            console.log(url)
+            uploadedImage.src = url;
             if (this.checked) {
 
             } else {
