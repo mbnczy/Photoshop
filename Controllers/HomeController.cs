@@ -110,7 +110,7 @@ namespace Photoshop.Controllers
 
         public IActionResult Laplace()
         {
-            PLogic.Instance.ApplyLoGEdgeDetection();
+            PLogic.Instance.ApplyLaplaceEdgeDetection();
 
             byte[] img = PLogic.Instance.GetImage();
             return new FileContentResult(img, "image/jpeg");

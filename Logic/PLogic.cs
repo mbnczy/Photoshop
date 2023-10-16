@@ -817,32 +817,20 @@ namespace Photoshop.Logic
                             greenGradient = 0;
                             blueGradient = 0;
                         }
-                        byte* outputPixelPtr = ptr + y * stride + x * 3;
-                        //outputPixelPtr[2] = (byte)Math.Min(255, redGradient);
-                        //outputPixelPtr[1] = (byte)Math.Min(255, greenGradient);
-                        //outputPixelPtr[0] = (byte)Math.Min(255, blueGradient);
-                        //int darknessFactor = 6;
-                        //outputPixelPtr[2] = (byte)Math.Max(0, outputPixelPtr[2] - redGradient / darknessFactor);
-                        //outputPixelPtr[1] = (byte)Math.Max(0, outputPixelPtr[1] - greenGradient / darknessFactor);
-                        //outputPixelPtr[0] = (byte)Math.Max(0, outputPixelPtr[0] - blueGradient / darknessFactor);
+                        //byte* outputPixelPtr = ptr + y * stride + x * 3;
 
-                        // Küszöbölés hozzáadása
-                        //int threshold = 100;
-                        //int thresholdedRed = redGradient > threshold ? 255 : 0;
-                        //int thresholdedGreen = greenGradient > threshold ? 255 : 0;
-                        //int thresholdedBlue = blueGradient > threshold ? 255 : 0;
-
-                        // Kiemelt élek a kimeneti képen, de sötétedés nélkül
-                        outputPixelPtr[2] = (byte)redGradient;
-                        outputPixelPtr[1] = (byte)greenGradient;
-                        outputPixelPtr[0] = (byte)blueGradient;
+                        //outputPixelPtr[2] = (byte)redGradient;
+                        //outputPixelPtr[1] = (byte)greenGradient;
+                        //outputPixelPtr[0] = (byte)blueGradient;
+                        Color edgeColor = Color.FromArgb((int)redGradient, (int)greenGradient, (int)blueGradient);
+                        bitmap.SetPixel(x, y, edgeColor);
                     }
                 }
             }
 
-            bitmap.UnlockBits(bitmapData);
 
             Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
+            bitmap.UnlockBits(bitmapData);
             return true;
         }
 
@@ -883,13 +871,18 @@ namespace Photoshop.Logic
                         }
 
                         int newPixelValue = Math.Min(Math.Max(laplaceSum, 0), 255);
-                        Color edgeColor = Color.FromArgb(newPixelValue, newPixelValue, newPixelValue);
-                        bitmap.SetPixel(x, y, edgeColor);
+
+                        //Color edgeColor = Color.FromArgb(newPixelValue, newPixelValue, newPixelValue);
+                        //bitmap.SetPixel(x, y, edgeColor);
+                        byte* outputPixelPtr = ptr + (y) * stride + (x) * 3;
+                        outputPixelPtr[2] = (byte)newPixelValue;
+                        outputPixelPtr[1] = (byte)newPixelValue;
+                        outputPixelPtr[0] = (byte)newPixelValue;
                     }
                 }
             }
-
             Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
+            bitmap.UnlockBits(bitmapData);
             return true;
         }
         public bool ApplyLoGEdgeDetection()
@@ -1068,7 +1061,7 @@ namespace Photoshop.Logic
             return true;
         }
 
-
+        
 
 
 
