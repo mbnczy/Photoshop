@@ -86,12 +86,16 @@
                 <img id="image" src="data:image/jpeg;base64,@(Model)" alt="Uploaded Image">
             </div>
         </div>
+        
         <div class="controls-column">
             <div class="controls">
+                <label>Elapsed time: </label><label id="runtime"></label><label> sec</label>
                 <form action="@Url.Action("Index", "Home")" method="post" enctype="multipart/form-data">
                     <input type="file" id="file-input" name="img">
                     <input type="submit" value="Upload" id="uploadsubmit" action="">
                 </form>
+
+
 
                 <button id="undo">Undo</button>
                 <br>
@@ -144,7 +148,7 @@
 
                 <button id="btnhist">Make Histogram</button>
                 <label>Show numbers on the histogram:</label>
-                <input type="checkbox" id="histnums"/>
+                <input type="checkbox" id="histnums" />
 
             </div>
         </div>
@@ -154,6 +158,7 @@
     <script>
         const btnsubmit = document.getElementById('uploadsubmit');
         const uploadedImage = document.getElementById('image');
+        const lbl_runtime = document.getElementById('runtime');
         const invertColorsCheckbox = document.getElementById('invertColors');
         const grayscaleCheckbox = document.getElementById('grayscale');
         const btnbrightness = document.getElementById('btnbrightness');
@@ -303,22 +308,17 @@
                 })
                 .then(data => {
                     console.log(data);
-                    var responseData = JSON.parse(data);
-                    var fileContentBase64 = responseData.FileContent.FileContents;
-                    console.log(fileContentBase64);
 
+                    var fileContentBase64 = data.FileContent;
                     var fileContentBytes = atob(fileContentBase64);
-                    // Convert the bytes to a string (assuming the file content is text)
-                    var fileContentString = new TextDecoder('utf-8').decode(new Uint8Array(fileContentBytes));
-                    // Access the additional string data
-                    var additionalData = responseData.ElapsedTime;
 
-                    // Now you can work with the file content and the additional data as needed
-                    console.log(fileContentString);
-                    console.log(additionalData);
+                    //var fileContentString = new TextDecoder('utf-8').decode(new Uint8Array(fileContentBytes));
+                    var fileContentBlob = new Blob([new Uint8Array(fileContentBytes)], { type: 'image/jpeg' });
+                    uploadedImage.src = URL.createObjectURL(fileContentBlob);
+
+                    lbl_runtime.textContent = data.ElapsedTime;
                 })
                 .catch(error => {
-                    // Handle any errors that occur during the fetch request
                     console.error('Fetch error:', error);
                 });
             @*var jsonResponse = @Url.Action("Harris", "Home");
@@ -327,8 +327,6 @@
             // Decode the base64 file content
             var fileContentBase64 = responseData.FileContent;
             var fileContentBytes = atob(fileContentBase64); // Decode base64 to bytes*@
-
-            
         });
 
 
