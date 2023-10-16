@@ -117,8 +117,7 @@ namespace Photoshop.Controllers
         }
         public IActionResult Harris()
         {
-            PLogic.Instance.ApplyHarrisCornerDetection();
-
+            PLogic.Instance.ApplyHarrisCornerDetection5();
             byte[] img = PLogic.Instance.GetImage();
             return new FileContentResult(img, "image/jpeg");
         }
