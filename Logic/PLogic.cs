@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -33,6 +34,18 @@ namespace Photoshop.Logic
 
             System.Drawing.AsposeDrawing.License lic = new System.Drawing.AsposeDrawing.License();
             //lic.SetLicense("Aspose.Drawing.lic");
+        }
+
+        public static TimeSpan MeasureExecutionTime(Action action)
+        {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            action.Invoke(); // Execute the function
+
+            stopwatch.Stop();
+
+            return stopwatch.Elapsed;
         }
 
         public bool Invert()
@@ -1059,7 +1072,6 @@ namespace Photoshop.Logic
 
             return true;
         }
-
         public bool ApplyHarrisCornerDetection2()
         {
             Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
@@ -1135,8 +1147,7 @@ namespace Photoshop.Logic
 
             return true;
         }
-
-        public unsafe bool ProcessImage()
+        public unsafe bool ApplyHarrisCornerDetection3()
         {
             // Make sure we have a grayscale image
             Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
@@ -1278,8 +1289,7 @@ namespace Photoshop.Logic
             Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
             return true;
         }
-
-        public unsafe bool ProcessImage2()
+        public unsafe bool ApplyHarrisCornerDetection4()
         {
             // Make sure we have a grayscale image
             Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
@@ -1451,15 +1461,14 @@ namespace Photoshop.Logic
 
         public List<Point> DetectCorners(Bitmap image, double threshold, double k, int windowSize)
         {
-            // Convert the input image to grayscale
-            Bitmap grayImage = ConvertToGrayscale(image);
+            this.GrayScale();
+            Bitmap grayImage = ConvertByteArrayToBitmap(Images.Peek());
 
             int width = grayImage.Width;
             int height = grayImage.Height;
 
             List<Point> corners = new List<Point>();
 
-            // Calculate gradients using simple central differences
             double[,] Ix = CalculateGradientX(grayImage);
             double[,] Iy = CalculateGradientY(grayImage);
 
@@ -1467,7 +1476,6 @@ namespace Photoshop.Logic
             double[,] B = new double[width, height];
             double[,] C = new double[width, height];
 
-            // Calculate the elements of the structure tensor
             for (int x = 0; x < width; x++)
             {
                 for (int y = 0; y < height; y++)
@@ -1483,14 +1491,14 @@ namespace Photoshop.Logic
 
             int halfSize = windowSize / 2;
 
-            // Compute the Harris Corner Response for each pixel
+            //harris corner response for each pixel
             for (int x = halfSize; x < width - halfSize; x++)
             {
                 for (int y = halfSize; y < height - halfSize; y++)
                 {
                     double sumA = 0, sumB = 0, sumC = 0;
 
-                    // Sum elements in the window
+                    //sum elements in the window
                     for (int wx = -halfSize; wx <= halfSize; wx++)
                     {
                         for (int wy = -halfSize; wy <= halfSize; wy++)
@@ -1504,7 +1512,7 @@ namespace Photoshop.Logic
                         }
                     }
 
-                    // Calculate the Harris Corner Response
+                    //calc. the harris corner response
                     double detM = sumA * sumB - sumC * sumC;
                     double traceM = sumA + sumB;
                     double cornerResponse = detM - k * (traceM * traceM);
@@ -1517,23 +1525,6 @@ namespace Photoshop.Logic
             }
 
             return corners;
-        }
-
-        private Bitmap ConvertToGrayscale(Bitmap image)
-        {
-            Bitmap grayImage = new Bitmap(image.Width, image.Height);
-
-            for (int x = 0; x < image.Width; x++)
-            {
-                for (int y = 0; y < image.Height; y++)
-                {
-                    Color pixel = image.GetPixel(x, y);
-                    int grayValue = (int)(0.299 * pixel.R + 0.587 * pixel.G + 0.114 * pixel.B);
-                    grayImage.SetPixel(x, y, Color.FromArgb(grayValue, grayValue, grayValue));
-                }
-            }
-
-            return grayImage;
         }
 
         private double[,] CalculateGradientX(Bitmap image)

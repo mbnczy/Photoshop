@@ -294,9 +294,41 @@
             uploadedImage.src = url;
         });
         btnharris.addEventListener('click', function () {
-            url = '@Url.Action("Harris", "Home")';
-            console.log(url);
-            uploadedImage.src = url;
+            fetch('/Home/Harris')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json(); // Parse the response as JSON
+                })
+                .then(data => {
+                    console.log(data);
+                    var responseData = JSON.parse(data);
+                    var fileContentBase64 = responseData.FileContent.FileContents;
+                    console.log(fileContentBase64);
+
+                    var fileContentBytes = atob(fileContentBase64);
+                    // Convert the bytes to a string (assuming the file content is text)
+                    var fileContentString = new TextDecoder('utf-8').decode(new Uint8Array(fileContentBytes));
+                    // Access the additional string data
+                    var additionalData = responseData.ElapsedTime;
+
+                    // Now you can work with the file content and the additional data as needed
+                    console.log(fileContentString);
+                    console.log(additionalData);
+                })
+                .catch(error => {
+                    // Handle any errors that occur during the fetch request
+                    console.error('Fetch error:', error);
+                });
+            @*var jsonResponse = @Url.Action("Harris", "Home");
+            var responseData = JSON.parse(jsonResponse);
+
+            // Decode the base64 file content
+            var fileContentBase64 = responseData.FileContent;
+            var fileContentBytes = atob(fileContentBase64); // Decode base64 to bytes*@
+
+            
         });
 
 

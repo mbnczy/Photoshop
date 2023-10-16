@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Drawing;
+using System.Net;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Photoshop.Logic;
 
@@ -117,9 +119,22 @@ namespace Photoshop.Controllers
         }
         public IActionResult Harris()
         {
-            PLogic.Instance.ApplyHarrisCornerDetection5();
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.ApplyHarrisCornerDetection5());
             byte[] img = PLogic.Instance.GetImage();
-            return new FileContentResult(img, "image/jpeg");
+            var data = new
+            {
+                FileContent = new FileContentResult(img, "image/jpeg"),
+                ElapsedTime = $"{elapsedTime.Seconds}.{elapsedTime.Milliseconds}"
+            };
+            string jsonData = JsonSerializer.Serialize(data);
+            //byte[] img = PLogic.Instance.GetImage();
+            //return new FileContentResult(img, "image/jpeg");
+            return new ContentResult
+            {
+                Content = jsonData,
+                ContentType = "application/json",
+                StatusCode = (int)HttpStatusCode.OK
+            };
         }
 
         public IActionResult GetActualImage()
