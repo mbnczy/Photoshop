@@ -90,6 +90,9 @@
         <div class="controls-column">
             <div class="controls">
                 <label>Elapsed time: </label><label id="runtime"></label><label> sec</label>
+                <br>
+                <label>Optimalize: </label><input type="checkbox" id="chk_opt"/>
+
                 <form action="@Url.Action("Index", "Home")" method="post" enctype="multipart/form-data">
                     <input type="file" id="file-input" name="img">
                     <input type="submit" value="Upload" id="uploadsubmit" action="">
