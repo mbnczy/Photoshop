@@ -29,50 +29,51 @@ namespace Photoshop.Controllers
         public IActionResult Gamma(string colors)
         {
             string[] splitted = colors.Split(";");
-            PLogic.Instance.Gamma(
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.Gamma(
                 Convert.ToDouble(splitted[0]),
                 Convert.ToDouble(splitted[1]),
                 Convert.ToDouble(splitted[2])
-            );
-
+            ));
             byte[] img = PLogic.Instance.GetImage();
-            return new FileContentResult(img, "image/jpeg");
+            return FormatJSON(img, elapsedTime);
         }
 
         public IActionResult Invert()
         {
-            PLogic.Instance.Invert();
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.Invert());
 
             byte[] img = PLogic.Instance.GetImage();
-            return new FileContentResult(img, "image/jpeg");
+
+            return FormatJSON(img, elapsedTime);
         }
         public IActionResult Grayscale()
         {
-            PLogic.Instance.GrayScale();
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.GrayScale());
 
             byte[] img = PLogic.Instance.GetImage();
-            return new FileContentResult(img, "image/jpeg");
+
+            return FormatJSON(img, elapsedTime);
         }
         public IActionResult Brightness(double brightness)
         {
-            PLogic.Instance.Brightness((int)brightness);
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.Brightness((int)brightness));
 
             byte[] img = PLogic.Instance.GetImage();
-            return new FileContentResult(img, "image/jpeg");
+            return FormatJSON(img, elapsedTime);
         }
         public IActionResult Contrast(double contrast)
         {
-            PLogic.Instance.Contrast((int)contrast);
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.Contrast((int)contrast));
 
             byte[] img = PLogic.Instance.GetImage();
-            return new FileContentResult(img, "image/jpeg");
+            return FormatJSON(img, elapsedTime);
         }
         public IActionResult Logarithm(double log)
         {
-            PLogic.Instance.Logarithm((int)log);
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.Logarithm((int)log));
 
             byte[] img = PLogic.Instance.GetImage();
-            return new FileContentResult(img, "image/jpeg");
+            return FormatJSON(img, elapsedTime);
         }
 
         public IActionResult Histogram()
@@ -81,60 +82,49 @@ namespace Photoshop.Controllers
             return Ok(hist);
         }
 
-        public IActionResult HistogramEq(double log)
+        public IActionResult HistogramEq()
         {
-            PLogic.Instance.HistogramEqualization();
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.HistogramEqualization());
 
             byte[] img = PLogic.Instance.GetImage();
-            return new FileContentResult(img, "image/jpeg");
+            return FormatJSON(img, elapsedTime);
         }
         public IActionResult BoxFilter(double box)
         {
-            PLogic.Instance.ApplyAverageFilter((int)box);
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.ApplyAverageFilter((int)box));
 
             byte[] img = PLogic.Instance.GetImage();
-            return new FileContentResult(img, "image/jpeg");
+            return FormatJSON(img, elapsedTime);
         }
         public IActionResult GaussFilter(string id, string sigma)
         {
-            PLogic.Instance.ApplyGaussianFilter2(Convert.ToInt32(id), Convert.ToInt32(sigma));
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.ApplyGaussianFilter2(Convert.ToInt32(id), Convert.ToInt32(sigma)));
+
             byte[] img = PLogic.Instance.GetImage();
-            return new FileContentResult(img, "image/jpeg");
+            return FormatJSON(img, elapsedTime);
         }
 
         public IActionResult Sobel()
         {
-            PLogic.Instance.ApplySobelEdgeDetection();
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.ApplySobelEdgeDetection());
 
             byte[] img = PLogic.Instance.GetImage();
-            return new FileContentResult(img, "image/jpeg");
+            return FormatJSON(img, elapsedTime);
         }
 
         public IActionResult Laplace()
         {
-            PLogic.Instance.ApplyLaplaceEdgeDetection();
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.ApplyLaplaceEdgeDetection());
 
             byte[] img = PLogic.Instance.GetImage();
-            return new FileContentResult(img, "image/jpeg");
+            return FormatJSON(img, elapsedTime);
         }
         public IActionResult Harris()
         {
             TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.ApplyHarrisCornerDetection5());
+
             byte[] img = PLogic.Instance.GetImage();
-            var data = new
-            {
-                FileContent = new FileContentResult(img, "image/jpeg"),
-                ElapsedTime = $"{elapsedTime.Seconds}.{elapsedTime.Milliseconds}"
-            };
-            string jsonData = JsonSerializer.Serialize(data);
-            //byte[] img = PLogic.Instance.GetImage();
-            //return new FileContentResult(img, "image/jpeg");
-            return new ContentResult
-            {
-                Content = jsonData,
-                ContentType = "application/json",
-                StatusCode = (int)HttpStatusCode.OK
-            };
+            return FormatJSON(img, elapsedTime);
         }
 
         public IActionResult GetActualImage()
@@ -156,6 +146,22 @@ namespace Photoshop.Controllers
                 return new FileContentResult(img, "image/jpeg");
             }
             return RedirectToAction(nameof(Index));
+        }
+
+        private ContentResult FormatJSON(byte[] img, TimeSpan elapsedTime)
+        {
+            var data = new
+            {
+                FileContent = new FileContentResult(img, "image/jpeg"),
+                ElapsedTime = $"{elapsedTime.Seconds}.{elapsedTime.Milliseconds}"
+            };
+            string jsonData = JsonSerializer.Serialize(data);
+            return new ContentResult
+            {
+                Content = jsonData,
+                ContentType = "application/json",
+                StatusCode = (int)HttpStatusCode.OK
+            };
         }
     }
 }

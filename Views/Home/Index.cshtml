@@ -198,6 +198,7 @@
         window.addEventListener('load', function () {
             url = '@Url.Action("GetActualImage", "Home")';
             uploadedImage.src = url;
+            lbl_runtime.textContent = "0";
         });
 
 
@@ -231,18 +232,11 @@
 
 
         invertColorsCheckbox.addEventListener('click', function () {
-            url = '@Url.Action("Invert", "Home")';
-            uploadedImage.src = url;
-            if (this.checked) {
-
-            } else {
-                // Clear any transformations
-                //uploadedImage.src = '';
-            }
+            FetchJSON("/Home/Invert");
         });
         grayscaleCheckbox.addEventListener('click', function () {
             url = '@Url.Action("Grayscale", "Home")';
-                uploadedImage.src = url;
+            FetchJSON(url);
             if (this.checked) {
 
             } else {
@@ -254,30 +248,30 @@
             url = '@Url.Action("Brightness", "Home", new { brightness = "PLACEHOLDER_BRIGHTNESS" })';
             url = url.replace("PLACEHOLDER_BRIGHTNESS", parseInt(brightnessvalue.textContent));
             console.log(url);
-            uploadedImage.src = url;
+            FetchJSON(url);
         });
         btncontrast.addEventListener('click', function () {
             url = '@Url.Action("Contrast", "Home", new { contrast = "PLACEHOLDER_CONTRAST" })';
             url = url.replace("PLACEHOLDER_CONTRAST", parseInt(contrastvalue.textContent));
             console.log(url);
-            uploadedImage.src = url;
+            FetchJSON(url);
         });
         btnlogarithm.addEventListener('click', function () {
             url = '@Url.Action("Logarithm", "Home", new { log = "PLACEHOLDER_LOGARITHM" })';
             url = url.replace("PLACEHOLDER_LOGARITHM", parseInt(logarithmvalue.textContent));
             console.log(url);
-            uploadedImage.src = url;
+            FetchJSON(url);
         });
         btnhisteq.addEventListener('click', function () {
             url = '@Url.Action("HistogramEq", "Home")';
             console.log(url);
-            uploadedImage.src = url;
+            FetchJSON(url);
         });
         btnbox.addEventListener('click', function () {
             url = '@Url.Action("BoxFilter", "Home", new { box = "PLACEHOLDER_BOX" })';
             url = url.replace("PLACEHOLDER_BOX", parseInt(boxvalue.textContent));
             console.log(url);
-            uploadedImage.src = url;
+            FetchJSON(url);
         });
         btngauss.addEventListener('click', function () {
             var url = '@Url.Action("GaussFilter", "Home", new { id = "PLACEHOLDER_GAUSS", sigma = "PLACEHOLDER_SIGMA"})';
@@ -286,50 +280,23 @@
                 .replace("PLACEHOLDER_SIGMA", gausssigma.value.toString())
                 .replace("&amp;", "?");
             console.log(url);
-            uploadedImage.src = url;
+            FetchJSON(url);
         });
         btnsobel.addEventListener('click', function () {
             url = '@Url.Action("Sobel", "Home")';
             console.log(url);
-            uploadedImage.src = url;
+            FetchJSON(url);
         });
         btnlaplace.addEventListener('click', function () {
             url = '@Url.Action("Laplace", "Home")';
             console.log(url);
-            uploadedImage.src = url;
+            FetchJSON(url);
         });
         btnharris.addEventListener('click', function () {
-            fetch('/Home/Harris')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json(); // Parse the response as JSON
-                })
-                .then(data => {
-                    console.log(data);
-
-                    var fileContentBase64 = data.FileContent;
-                    var fileContentBytes = atob(fileContentBase64);
-
-                    //var fileContentString = new TextDecoder('utf-8').decode(new Uint8Array(fileContentBytes));
-                    var fileContentBlob = new Blob([new Uint8Array(fileContentBytes)], { type: 'image/jpeg' });
-                    uploadedImage.src = URL.createObjectURL(fileContentBlob);
-
-                    lbl_runtime.textContent = data.ElapsedTime;
-                })
-                .catch(error => {
-                    console.error('Fetch error:', error);
-                });
-            @*var jsonResponse = @Url.Action("Harris", "Home");
-            var responseData = JSON.parse(jsonResponse);
-
-            // Decode the base64 file content
-            var fileContentBase64 = responseData.FileContent;
-            var fileContentBytes = atob(fileContentBase64); // Decode base64 to bytes*@
+            url = '@Url.Action("Harris", "Home")';
+            console.log(url);
+            FetchJSON(url);
         });
-
-
 
         btnhist.addEventListener('click', function () {
             fetch('/Home/Histogram')
@@ -337,49 +304,45 @@
                     if (!response.ok) {
                         throw new Error('Network response was not ok');
                     }
-                    return response.json(); // Parse the response as JSON
+                    return response.json();
                 })
                 .then(data => {
-                    // Process the histogram data here and update the UI
                     console.log('Histogram Data:', data);
                     const histogramData = data;
                     const svg = document.getElementById('histogramCanvas');
 
-                    //clear
                     while (svg.firstChild) {
                         svg.removeChild(svg.firstChild);
                     }
-                    // Set up chart properties
+
                     const svgWidth = svg.getAttribute('width');
                     const svgHeight = svg.getAttribute('height');
-                    const maxBarHeight = svgHeight - 20; // Adjust as needed
+                    const maxBarHeight = svgHeight - 20; 
                     const barWidth = svgWidth / histogramData.length;
 
                     const maxValue = Math.max.apply(null, histogramData);
 
-                    // Create and append rectangles (bars) to the SVG
                     for (let i = 0; i < histogramData.length; i++) {
                         const barHeight = (histogramData[i] / maxValue) * maxBarHeight;
                         const x = i * barWidth;
                         const y = svgHeight - barHeight;
-                        const valueLabel = histogramData[i]; // Get the value to display
+                        const valueLabel = histogramData[i];
 
-                        // Create the rectangle (bar)
                         const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
 
                         rect.setAttribute('x', x);
                         rect.setAttribute('y', y);
                         rect.setAttribute('width', barWidth);
                         rect.setAttribute('height', barHeight);
-                        rect.setAttribute('fill', 'blue'); // Bar color (adjust as needed)
+                        rect.setAttribute('fill', 'blue'); 
 
                         svg.appendChild(rect);
-                        // Create and append the value label
+
                         if (document.getElementById("histnums").checked && valueLabel != 0)
                         {
                             const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                             label.setAttribute('x', x + barWidth / 2);
-                            label.setAttribute('y', y - 5); // Adjust the vertical position
+                            label.setAttribute('y', y - 5);
                             label.setAttribute('class', 'bar-label');
                             label.textContent = valueLabel;
                             svg.appendChild(label);
@@ -387,23 +350,12 @@
                     }
                 })
                 .catch(error => {
-                    // Handle any errors that occur during the fetch request
                     console.error('Fetch error:', error);
                 });
 
         });
 
         applyGammaCheckbox.addEventListener('click', function () {
-            @*url = '@Url.Action("Gamma", "Home", new {
-                      red = "PLACEHOLDER_RED",
-                      green = "PLACEHOLDER_GREEN",
-                      blue = "PLACEHOLDER_BLUE"
-                })';
-
-            url = url
-                .replace("PLACEHOLDER_RED", parseInt(redRangeValue.textContent))
-                .replace("PLACEHOLDER_GREEN", parseInt(greenRangeValue.textContent))
-                .replace("PLACEHOLDER_BLUE", parseInt(blueRangeValue.textContent));*@
             url = '@Url.Action("Gamma", "Home", new {
                       colors="PLACEHOLDER_COLORS",
                 })'
@@ -412,14 +364,8 @@
                     parseInt(redRangeValue.textContent) + ";" +
                     parseInt(greenRangeValue.textContent) + ";" +
                     parseInt(blueRangeValue.textContent));
-            console.log(url)
-            uploadedImage.src = url;
-            if (this.checked) {
-
-            } else {
-                // Clear any transformations
-                //uploadedImage.src = '';
-            }
+            console.log(url);
+            FetchJSON(url);
         });
 
         btnundo.addEventListener('click',  function () {
@@ -427,6 +373,7 @@
             console.log('undo')
             url = '@Url.Action("Undo", "Home")';
             uploadedImage.src = url;
+            lbl_runtime.textContent = "0";
         });
 
         document.getElementById('file-input').addEventListener('change', function (e) {
@@ -446,6 +393,33 @@
             //    //uploadedImage.src = ''; // Clear the image if no file is selected
             //}
         });
+
+        function b64toBlob(base64) {
+            var byteCharacters = atob(base64);
+            var byteNumbers = new Array(byteCharacters.length);
+            for (var i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            var byteArray = new Uint8Array(byteNumbers);
+            return new Blob([byteArray], { type: 'image/jpeg' });
+        }
+        function FetchJSON(url) {
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log(data);
+                    uploadedImage.src = URL.createObjectURL(b64toBlob(data.FileContent.FileContents));
+                    lbl_runtime.textContent = data.ElapsedTime;
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+            });
+        }
     </script>
 </body>
 </html>
