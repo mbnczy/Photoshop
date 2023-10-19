@@ -149,6 +149,42 @@ namespace Photoshop.Logic
                 return true;
             }
         }
+        public bool OptGrayScale()
+        {
+            Bitmap b = ConvertByteArrayToBitmap(Images.Peek());
+            int height = b.Height;
+            int width = b.Width;
+
+            BitmapData bmData = b.LockBits(new Rectangle(0, 0, width, height),
+                ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+            int stride = bmData.Stride;
+            System.IntPtr Scan0 = bmData.Scan0;
+
+            unsafe
+            {
+                Parallel.For(0, height, y =>
+                {
+                    byte* p = (byte*)(void*)Scan0 + y * stride;
+                    int nOffset = stride - width * 3;
+                    byte red, green, blue;
+
+                    for (int x = 0; x < width; ++x)
+                    {
+                        byte gray = (byte)(.299 * p[2] + .587 * p[1] + .114 * p[0]);
+
+                        p[0] = p[1] = p[2] = gray;
+
+                        p += 3;
+                    }
+                });
+            }
+
+            b.UnlockBits(bmData);
+
+            Images.Push(ConvertBitmapToByteArray(b, ImageFormat.Jpeg));
+            return true;
+        }
+
 
         public bool Brightness(int brightness)
         {

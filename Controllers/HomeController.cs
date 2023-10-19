@@ -64,6 +64,16 @@ namespace Photoshop.Controllers
 
             return FormatJSON(img, elapsedTime);
         }
+        public IActionResult Opt_Grayscale()
+        {
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.OptGrayScale());
+
+            byte[] img = PLogic.Instance.GetImage();
+
+            return FormatJSON(img, elapsedTime);
+        }
+
+
         public IActionResult Brightness(double brightness)
         {
             TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.Brightness((int)brightness));
