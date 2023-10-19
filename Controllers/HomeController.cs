@@ -46,6 +46,16 @@ namespace Photoshop.Controllers
 
             return FormatJSON(img, elapsedTime);
         }
+        public IActionResult Opt_Invert()
+        {
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.OptInvert());
+
+            byte[] img = PLogic.Instance.GetImage();
+
+            return FormatJSON(img, elapsedTime);
+        }
+
+
         public IActionResult Grayscale()
         {
             TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.GrayScale());
