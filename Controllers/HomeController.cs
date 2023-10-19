@@ -81,6 +81,15 @@ namespace Photoshop.Controllers
             byte[] img = PLogic.Instance.GetImage();
             return FormatJSON(img, elapsedTime);
         }
+        public IActionResult Opt_Brightness(double brightness)
+        {
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.OptBrightness((int)brightness));
+
+            byte[] img = PLogic.Instance.GetImage();
+            return FormatJSON(img, elapsedTime);
+        }
+
+
         public IActionResult Contrast(double contrast)
         {
             TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.Contrast((int)contrast));
@@ -88,9 +97,25 @@ namespace Photoshop.Controllers
             byte[] img = PLogic.Instance.GetImage();
             return FormatJSON(img, elapsedTime);
         }
+        public IActionResult Opt_Contrast(double contrast)
+        {
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.OptContrast((int)contrast));
+
+            byte[] img = PLogic.Instance.GetImage();
+            return FormatJSON(img, elapsedTime);
+        }
+
+
         public IActionResult Logarithm(double log)
         {
             TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.Logarithm((int)log));
+
+            byte[] img = PLogic.Instance.GetImage();
+            return FormatJSON(img, elapsedTime);
+        }
+        public IActionResult Opt_Logarithm(double log)
+        {
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.OptLogarithm((int)log));
 
             byte[] img = PLogic.Instance.GetImage();
             return FormatJSON(img, elapsedTime);
@@ -105,6 +130,13 @@ namespace Photoshop.Controllers
         public IActionResult HistogramEq()
         {
             TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.HistogramEqualization());
+
+            byte[] img = PLogic.Instance.GetImage();
+            return FormatJSON(img, elapsedTime);
+        }
+        public IActionResult Opt_HistogramEq()
+        {
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.OptHistogramEqualization());
 
             byte[] img = PLogic.Instance.GetImage();
             return FormatJSON(img, elapsedTime);

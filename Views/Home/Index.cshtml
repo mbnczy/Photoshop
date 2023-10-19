@@ -263,7 +263,7 @@
         });
         btncontrast.addEventListener('click', function () {
             if (chk_opt.checked) {
-
+                url = '@Url.Action("Opt_Contrast", "Home", new { contrast = "PLACEHOLDER_CONTRAST" })';
             } else {
 
                 url = '@Url.Action("Contrast", "Home", new { contrast = "PLACEHOLDER_CONTRAST" })';
@@ -274,7 +274,7 @@
         });
         btnlogarithm.addEventListener('click', function () {
             if (chk_opt.checked) {
-
+                url = '@Url.Action("Opt_Logarithm", "Home", new { log = "PLACEHOLDER_LOGARITHM" })';
             } else {
                 url = '@Url.Action("Logarithm", "Home", new { log = "PLACEHOLDER_LOGARITHM" })';
 
@@ -285,7 +285,7 @@
         });
         btnhisteq.addEventListener('click', function () {
             if (chk_opt.checked) {
-
+                url = '@Url.Action("Opt_HistogramEq", "Home")';
             } else {
                 url = '@Url.Action("HistogramEq", "Home")';
 
@@ -295,10 +295,9 @@
         });
         btnbox.addEventListener('click', function () {
             if (chk_opt.checked) {
-
+                url = '@Url.Action("Opt_BoxFilter", "Home", new { box = "PLACEHOLDER_BOX" })';
             } else {
                 url = '@Url.Action("BoxFilter", "Home", new { box = "PLACEHOLDER_BOX" })';
-
             }
             url = url.replace("PLACEHOLDER_BOX", parseInt(boxvalue.textContent));
             console.log(url);
@@ -306,10 +305,9 @@
         });
         btngauss.addEventListener('click', function () {
             if (chk_opt.checked) {
-
+                url = '@Url.Action("Opt_GaussFilter", "Home", new { id = "PLACEHOLDER_GAUSS", sigma = "PLACEHOLDER_SIGMA"})';
             } else {
                 url = '@Url.Action("GaussFilter", "Home", new { id = "PLACEHOLDER_GAUSS", sigma = "PLACEHOLDER_SIGMA"})';
-
             }
             url = url
                 .replace("PLACEHOLDER_GAUSS", gaussvalue.textContent.toString())
@@ -320,7 +318,7 @@
         });
         btnsobel.addEventListener('click', function () {
             if (chk_opt.checked) {
-
+                url = '@Url.Action("Opt_Sobel", "Home")';
             } else {
 
                 url = '@Url.Action("Sobel", "Home")';
@@ -330,7 +328,7 @@
         });
         btnlaplace.addEventListener('click', function () {
             if (chk_opt.checked) {
-
+                url = '@Url.Action("Opt_Laplace", "Home")';
             } else {
 
                 url = '@Url.Action("Laplace", "Home")';
@@ -340,9 +338,8 @@
         });
         btnharris.addEventListener('click', function () {
             if (chk_opt.checked) {
-
+                url = '@Url.Action("Opt_Harris", "Home")';
             } else {
-
                 url = '@Url.Action("Harris", "Home")';
             }
             console.log(url);

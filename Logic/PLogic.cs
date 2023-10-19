@@ -227,6 +227,45 @@ namespace Photoshop.Logic
             }
             
         }
+        public bool OptBrightness(int brightness)
+        {
+            Bitmap b = ConvertByteArrayToBitmap(Images.Peek());
+            int height = b.Height;
+            int width = b.Width;
+            BitmapData bmData = b.LockBits(new Rectangle(0, 0, width, height),
+                ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+            int stride = bmData.Stride;
+            System.IntPtr Scan0 = bmData.Scan0;
+            int nWidth = width * 3;
+
+            unsafe
+            {
+                Parallel.For(0, height, y =>
+                {
+                    byte* p = (byte*)(void*)Scan0 + y * stride;
+                    int nOffset = stride - width * 3;
+
+                    for (int x = 0; x < nWidth; ++x)
+                    {
+                        int nVal = (int)(p[0] + brightness);
+
+                        if (nVal < 0) nVal = 0;
+                        if (nVal > 255) nVal = 255;
+
+                        p[0] = (byte)nVal;
+
+                        ++p;
+                    }
+                });
+            }
+
+            b.UnlockBits(bmData);
+
+            Images.Push(ConvertBitmapToByteArray(b, ImageFormat.Jpeg));
+            return true;
+        }
+
+
 
         public bool Contrast(int nContrast)
         {
@@ -278,6 +317,56 @@ namespace Photoshop.Logic
                 return true;
             }
         }
+        public bool OptContrast(int nContrast)
+        {
+            Bitmap b = ConvertByteArrayToBitmap(Images.Peek());
+            int height = b.Height;
+            int width = b.Width;
+            BitmapData bmData = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
+                ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+            int stride = bmData.Stride;
+            System.IntPtr Scan0 = bmData.Scan0;
+            int nWidth = b.Width * 3;
+
+            if (nContrast < -100) return false;
+            if (nContrast > 100) return false;
+
+            double pixel = 0, contrast = (100.0 + nContrast) / 100.0;
+            contrast *= contrast;
+
+            unsafe
+            {
+                Parallel.For(0, b.Height, y =>
+                {
+                    byte* p = (byte*)(void*)Scan0 + y * stride;
+                    int nOffset = stride - b.Width * 3;
+
+                    for (int x = 0; x < nWidth; ++x)
+                    {
+                        int red = p[2];
+
+                        pixel = red / 255.0;
+                        pixel -= 0.5;
+                        pixel *= contrast;
+                        pixel += 0.5;
+                        pixel *= 255;
+                        if (pixel < 0) pixel = 0;
+                        if (pixel > 255) pixel = 255;
+
+                        p[2] = (byte)pixel;
+
+                        ++p;
+                    }
+                });
+            }
+
+            b.UnlockBits(bmData);
+
+            Images.Push(ConvertBitmapToByteArray(b, ImageFormat.Jpeg));
+
+            return true;
+        }
+
 
         public bool Logarithm(int nLog)
         {
@@ -298,7 +387,6 @@ namespace Photoshop.Logic
                 {
                     for (int x = 0; x < nWidth; ++x)
                     {
-                        //g(x, y) = c * log [1.0 + f(x, y)]
                         double pixelValue = p[0];
                         double transformedValue = nLog * Math.Log(1.0 + pixelValue);
 
@@ -316,6 +404,43 @@ namespace Photoshop.Logic
                 return true;
             }
         }
+        public bool OptLogarithm(int nLog)
+        {
+            Bitmap b = ConvertByteArrayToBitmap(Images.Peek());
+
+            BitmapData bmData = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
+                ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+            int stride = bmData.Stride;
+            System.IntPtr Scan0 = bmData.Scan0;
+            int nWidth = b.Width * 3;
+
+            unsafe
+            {
+                Parallel.For(0, b.Height, y =>
+                {
+                    byte* p = (byte*)(void*)Scan0 + y * stride;
+                    int nOffset = stride - b.Width * 3;
+
+                    for (int x = 0; x < nWidth; ++x)
+                    {
+                        double pixelValue = p[0];
+                        double transformedValue = nLog * Math.Log(1.0 + pixelValue);
+
+                        byte newValue = (byte)Math.Min(255, Math.Max(0, transformedValue));
+
+                        p[0] = newValue;
+                        ++p;
+                    }
+                });
+            }
+
+            b.UnlockBits(bmData);
+
+            Images.Push(ConvertBitmapToByteArray(b, ImageFormat.Jpeg));
+
+            return true;
+        }
+
 
         public bool Gamma(double red, double green, double blue)
         {
@@ -515,66 +640,7 @@ namespace Photoshop.Logic
 
             return histogram;
         }
-        public int[] Bad_hist()
-        {
-            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
 
-            int totalPixels = bitmap.Height * bitmap.Width;
-            int[] histogram = new int[256];
-            BitmapData imageData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
-                ImageLockMode.ReadOnly, PixelFormat.Format8bppIndexed);
-            byte[] pixels = new byte[totalPixels];
-            Marshal.Copy(imageData.Scan0, pixels, 0, totalPixels);
-            bitmap.UnlockBits(imageData);
-
-            for (int i = 0; i < totalPixels; i++)
-            {
-                histogram[pixels[i]]++;
-            }
-
-            return histogram;
-        }
-        public bool LSD_Filter()
-        {
-            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
-
-            int totalPixels = bitmap.Height * bitmap.Width;
-
-            int[] histogram = new int[256];
-            BitmapData imageData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
-                ImageLockMode.ReadOnly, PixelFormat.Format8bppIndexed);
-            byte[] pixels = new byte[totalPixels];
-            Marshal.Copy(imageData.Scan0, pixels, 0, totalPixels);
-            bitmap.UnlockBits(imageData);
-
-            for (int i = 0; i < totalPixels; i++)
-            {
-                histogram[pixels[i]]++;
-            }
-
-            int[] cdf = new int[256];
-            cdf[0] = histogram[0];
-            for (int i = 1; i < 256; i++)
-            {
-                cdf[i] = cdf[i - 1] + histogram[i];
-            }
-
-            BitmapData outputData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
-                ImageLockMode.WriteOnly, PixelFormat.Format8bppIndexed);
-            byte[] outputPixels = new byte[totalPixels];
-
-            for (int i = 0; i < totalPixels; i++)
-            {
-                outputPixels[i] = (byte)((cdf[pixels[i]] * 255) / totalPixels);
-            }
-
-            Marshal.Copy(outputPixels, 0, outputData.Scan0, totalPixels);
-
-            bitmap.UnlockBits(outputData);
-            Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
-
-            return true;
-        }
         public bool HistogramEqualization()
         {
             int[] histogram_ = CreateHistogram();
@@ -590,7 +656,6 @@ namespace Photoshop.Logic
             {
                 byte* ptr = (byte*)bitmapData.Scan0;
 
-                // Calculate the cumulative distribution function (CDF)
                 int[] cdf = new int[256];
                 cdf[0] = histogram_[0];
                 for (int i = 1; i < 256; i++)
@@ -610,6 +675,40 @@ namespace Photoshop.Logic
 
             return true;
         }
+        public bool OptHistogramEqualization()
+        {
+            int[] histogram = CreateHistogram();
+
+            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
+
+            int totalPixels = bitmap.Height * bitmap.Width;
+
+            BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
+                ImageLockMode.ReadWrite, bitmap.PixelFormat);
+
+            unsafe
+            {
+                byte* ptr = (byte*)bitmapData.Scan0;
+
+                int[] cdf = new int[256];
+                cdf[0] = histogram[0];
+                for (int i = 1; i < 256; i++)
+                {
+                    cdf[i] = cdf[i - 1] + histogram[i];
+                }
+
+                Parallel.For(0, totalPixels * 3, i =>
+                {
+                    ptr[i] = (byte)((cdf[ptr[i]] * 255) / totalPixels);
+                });
+            }
+
+            bitmap.UnlockBits(bitmapData);
+            Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
+
+            return true;
+        }
+
 
         public bool ApplyAverageFilter(int filterSize)
         {
@@ -1697,6 +1796,66 @@ namespace Photoshop.Logic
                 //Color.GetType().GetProperty("Image" + (i + 1)).SetValue(Color, buffer);
                 //Color.GetType().GetProperty("ContentType" + (i + 1)).SetValue(Color, Color.PictureData[i].ContentType);
             }
+        }
+        public int[] Bad_hist()
+        {
+            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
+
+            int totalPixels = bitmap.Height * bitmap.Width;
+            int[] histogram = new int[256];
+            BitmapData imageData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
+                ImageLockMode.ReadOnly, PixelFormat.Format8bppIndexed);
+            byte[] pixels = new byte[totalPixels];
+            Marshal.Copy(imageData.Scan0, pixels, 0, totalPixels);
+            bitmap.UnlockBits(imageData);
+
+            for (int i = 0; i < totalPixels; i++)
+            {
+                histogram[pixels[i]]++;
+            }
+
+            return histogram;
+        }
+        public bool LSD_Filter()
+        {
+            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
+
+            int totalPixels = bitmap.Height * bitmap.Width;
+
+            int[] histogram = new int[256];
+            BitmapData imageData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
+                ImageLockMode.ReadOnly, PixelFormat.Format8bppIndexed);
+            byte[] pixels = new byte[totalPixels];
+            Marshal.Copy(imageData.Scan0, pixels, 0, totalPixels);
+            bitmap.UnlockBits(imageData);
+
+            for (int i = 0; i < totalPixels; i++)
+            {
+                histogram[pixels[i]]++;
+            }
+
+            int[] cdf = new int[256];
+            cdf[0] = histogram[0];
+            for (int i = 1; i < 256; i++)
+            {
+                cdf[i] = cdf[i - 1] + histogram[i];
+            }
+
+            BitmapData outputData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
+                ImageLockMode.WriteOnly, PixelFormat.Format8bppIndexed);
+            byte[] outputPixels = new byte[totalPixels];
+
+            for (int i = 0; i < totalPixels; i++)
+            {
+                outputPixels[i] = (byte)((cdf[pixels[i]] * 255) / totalPixels);
+            }
+
+            Marshal.Copy(outputPixels, 0, outputData.Scan0, totalPixels);
+
+            bitmap.UnlockBits(outputData);
+            Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
+
+            return true;
         }
     }
 }
