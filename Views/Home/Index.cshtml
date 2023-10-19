@@ -162,6 +162,7 @@
         const btnsubmit = document.getElementById('uploadsubmit');
         const uploadedImage = document.getElementById('image');
         const lbl_runtime = document.getElementById('runtime');
+        const chk_opt = document.getElementById('chk_opt');
         const invertColorsCheckbox = document.getElementById('invertColors');
         const grayscaleCheckbox = document.getElementById('grayscale');
         const btnbrightness = document.getElementById('btnbrightness');
@@ -234,50 +235,82 @@
 
 
 
-        invertColorsCheckbox.addEventListener('click', function () {
-            FetchJSON("/Home/Invert");
-        });
-        grayscaleCheckbox.addEventListener('click', function () {
-            url = '@Url.Action("Grayscale", "Home")';
-            FetchJSON(url);
-            if (this.checked) {
-
+    invertColorsCheckbox.addEventListener('click', function () {
+            if (chk_opt.checked) {
+                FetchJSON("/Home/Invert");
             } else {
-                // Clear any transformations
-                //uploadedImage.src = '';
+                FetchJSON("/Home/Invert");
             }
         });
+        grayscaleCheckbox.addEventListener('click', function () {
+            if (chk_opt.checked) {
+                url = '@Url.Action("Opt_Grayscale", "Home")';
+            } else {
+                url = '@Url.Action("Grayscale", "Home")';
+            }
+            console.log(url);
+            FetchJSON(url);
+        });
         btnbrightness.addEventListener('click', function () {
-            url = '@Url.Action("Brightness", "Home", new { brightness = "PLACEHOLDER_BRIGHTNESS" })';
+            if (chk_opt.checked) {
+               url = '@Url.Action("Opt_Brightness", "Home", new { brightness = "PLACEHOLDER_BRIGHTNESS" })';
+            } else {
+               url = '@Url.Action("Brightness", "Home", new { brightness = "PLACEHOLDER_BRIGHTNESS" })';
+            }
             url = url.replace("PLACEHOLDER_BRIGHTNESS", parseInt(brightnessvalue.textContent));
             console.log(url);
             FetchJSON(url);
         });
         btncontrast.addEventListener('click', function () {
-            url = '@Url.Action("Contrast", "Home", new { contrast = "PLACEHOLDER_CONTRAST" })';
+            if (chk_opt.checked) {
+
+            } else {
+
+                url = '@Url.Action("Contrast", "Home", new { contrast = "PLACEHOLDER_CONTRAST" })';
+            }
             url = url.replace("PLACEHOLDER_CONTRAST", parseInt(contrastvalue.textContent));
             console.log(url);
             FetchJSON(url);
         });
         btnlogarithm.addEventListener('click', function () {
-            url = '@Url.Action("Logarithm", "Home", new { log = "PLACEHOLDER_LOGARITHM" })';
+            if (chk_opt.checked) {
+
+            } else {
+                url = '@Url.Action("Logarithm", "Home", new { log = "PLACEHOLDER_LOGARITHM" })';
+
+            }
             url = url.replace("PLACEHOLDER_LOGARITHM", parseInt(logarithmvalue.textContent));
             console.log(url);
             FetchJSON(url);
         });
         btnhisteq.addEventListener('click', function () {
-            url = '@Url.Action("HistogramEq", "Home")';
+            if (chk_opt.checked) {
+
+            } else {
+                url = '@Url.Action("HistogramEq", "Home")';
+
+            }
             console.log(url);
             FetchJSON(url);
         });
         btnbox.addEventListener('click', function () {
-            url = '@Url.Action("BoxFilter", "Home", new { box = "PLACEHOLDER_BOX" })';
+            if (chk_opt.checked) {
+
+            } else {
+                url = '@Url.Action("BoxFilter", "Home", new { box = "PLACEHOLDER_BOX" })';
+
+            }
             url = url.replace("PLACEHOLDER_BOX", parseInt(boxvalue.textContent));
             console.log(url);
             FetchJSON(url);
         });
         btngauss.addEventListener('click', function () {
-            var url = '@Url.Action("GaussFilter", "Home", new { id = "PLACEHOLDER_GAUSS", sigma = "PLACEHOLDER_SIGMA"})';
+            if (chk_opt.checked) {
+
+            } else {
+                url = '@Url.Action("GaussFilter", "Home", new { id = "PLACEHOLDER_GAUSS", sigma = "PLACEHOLDER_SIGMA"})';
+
+            }
             url = url
                 .replace("PLACEHOLDER_GAUSS", gaussvalue.textContent.toString())
                 .replace("PLACEHOLDER_SIGMA", gausssigma.value.toString())
@@ -286,17 +319,32 @@
             FetchJSON(url);
         });
         btnsobel.addEventListener('click', function () {
-            url = '@Url.Action("Sobel", "Home")';
+            if (chk_opt.checked) {
+
+            } else {
+
+                url = '@Url.Action("Sobel", "Home")';
+            }
             console.log(url);
             FetchJSON(url);
         });
         btnlaplace.addEventListener('click', function () {
-            url = '@Url.Action("Laplace", "Home")';
+            if (chk_opt.checked) {
+
+            } else {
+
+                url = '@Url.Action("Laplace", "Home")';
+            }
             console.log(url);
             FetchJSON(url);
         });
         btnharris.addEventListener('click', function () {
-            url = '@Url.Action("Harris", "Home")';
+            if (chk_opt.checked) {
+
+            } else {
+
+                url = '@Url.Action("Harris", "Home")';
+            }
             console.log(url);
             FetchJSON(url);
         });
@@ -320,7 +368,7 @@
 
                     const svgWidth = svg.getAttribute('width');
                     const svgHeight = svg.getAttribute('height');
-                    const maxBarHeight = svgHeight - 20; 
+                    const maxBarHeight = svgHeight - 20;
                     const barWidth = svgWidth / histogramData.length;
 
                     const maxValue = Math.max.apply(null, histogramData);
@@ -337,7 +385,7 @@
                         rect.setAttribute('y', y);
                         rect.setAttribute('width', barWidth);
                         rect.setAttribute('height', barHeight);
-                        rect.setAttribute('fill', 'blue'); 
+                        rect.setAttribute('fill', 'blue');
 
                         svg.appendChild(rect);
 
@@ -359,9 +407,13 @@
         });
 
         applyGammaCheckbox.addEventListener('click', function () {
-            url = '@Url.Action("Gamma", "Home", new {
+            if (chk_opt.checked) {
+
+            } else {
+                url = '@Url.Action("Gamma", "Home", new {
                       colors="PLACEHOLDER_COLORS",
                 })'
+            }
             url = url
                 .replace("PLACEHOLDER_COLORS",
                     parseInt(redRangeValue.textContent) + ";" +

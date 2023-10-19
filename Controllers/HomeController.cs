@@ -126,6 +126,13 @@ namespace Photoshop.Controllers
             byte[] img = PLogic.Instance.GetImage();
             return FormatJSON(img, elapsedTime);
         }
+        public IActionResult LsdFilter()
+        {
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.LSD_Filter());
+
+            byte[] img = PLogic.Instance.GetImage();
+            return FormatJSON(img, elapsedTime);
+        }
 
         public IActionResult GetActualImage()
         {
