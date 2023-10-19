@@ -759,6 +759,56 @@ namespace Photoshop.Logic
             Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
             return true;
         }
+        public bool OptApplyAverageFilter(int filterSize)
+        {
+            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
+            int halfSize = filterSize / 2;
+
+            BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
+                ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+
+            unsafe
+            {
+                byte* ptr = (byte*)bitmapData.Scan0.ToPointer();
+
+                int stride = bitmapData.Stride;
+
+                Parallel.For(halfSize, bitmap.Height - halfSize, y =>
+                {
+                    for (int x = halfSize; x < bitmap.Width - halfSize; x++)
+                    {
+                        int totalRed = 0, totalGreen = 0, totalBlue = 0;
+
+                        for (int j = -halfSize; j <= halfSize; j++)
+                        {
+                            for (int i = -halfSize; i <= halfSize; i++)
+                            {
+                                byte* pixelPtr = ptr + (y + j) * stride + (x + i) * 3;
+
+                                totalRed += pixelPtr[2];
+                                totalGreen += pixelPtr[1];
+                                totalBlue += pixelPtr[0];
+                            }
+                        }
+
+                        int divisor = filterSize * filterSize;
+                        int newRed = totalRed / divisor;
+                        int newGreen = totalGreen / divisor;
+                        int newBlue = totalBlue / divisor;
+
+                        byte* outputPixelPtr = ptr + y * stride + x * 3;
+                        outputPixelPtr[2] = (byte)newRed;
+                        outputPixelPtr[1] = (byte)newGreen;
+                        outputPixelPtr[0] = (byte)newBlue;
+                    }
+                });
+            }
+
+            bitmap.UnlockBits(bitmapData);
+            Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
+            return true;
+        }
+
 
         public bool ApplyGaussianFilter(int size, double sigma)
         {

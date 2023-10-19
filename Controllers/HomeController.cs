@@ -121,6 +121,7 @@ namespace Photoshop.Controllers
             return FormatJSON(img, elapsedTime);
         }
 
+
         public IActionResult Histogram()
         {
             int[] hist = PLogic.Instance.CreateHistogram();
@@ -141,6 +142,7 @@ namespace Photoshop.Controllers
             byte[] img = PLogic.Instance.GetImage();
             return FormatJSON(img, elapsedTime);
         }
+
         public IActionResult BoxFilter(double box)
         {
             TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.ApplyAverageFilter((int)box));
@@ -148,6 +150,15 @@ namespace Photoshop.Controllers
             byte[] img = PLogic.Instance.GetImage();
             return FormatJSON(img, elapsedTime);
         }
+        public IActionResult Opt_BoxFilter(double box)
+        {
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.OptApplyAverageFilter((int)box));
+
+            byte[] img = PLogic.Instance.GetImage();
+            return FormatJSON(img, elapsedTime);
+        }
+
+
         public IActionResult GaussFilter(string id, string sigma)
         {
             TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.ApplyGaussianFilter2(Convert.ToInt32(id), Convert.ToInt32(sigma)));
