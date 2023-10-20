@@ -852,7 +852,7 @@ namespace Photoshop.Logic
         }
 
 
-        public bool ApplyGaussianFilter(int size, double sigma)
+        public bool ApplyGaussianFilter1(int size, double sigma)
         {
             Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
             int width = bitmap.Width;
@@ -922,7 +922,7 @@ namespace Photoshop.Logic
 
             return true;
         }
-        public bool ApplyGaussianFilter2(int size, double weight)
+        public bool ApplyGaussianFilter(int size, double weight)
         {
             double[,] kernel = new double[size, size];
             double kernelSum = 0;
@@ -1011,13 +1011,14 @@ namespace Photoshop.Logic
 
             return true;
         }
-        public bool OptApplyGaussianFilter2(int size, double weight)
+        public bool OptApplyGaussianFilter(int size, double weight)
         {
             double[,] kernel = new double[size, size];
             double kernelSum = 0;
             double dist = 0;
             int halfsize = (size - 1) / 2;
             double constant = 1d / (2 * Math.PI * weight * weight);
+
             for (int y = -halfsize; y <= halfsize; y++)
             {
                 for (int x = -halfsize; x <= halfsize; x++)
@@ -1035,6 +1036,7 @@ namespace Photoshop.Logic
                 }
             }
 
+            //apply filter
             Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
             int width = bitmap.Width;
             int height = bitmap.Height;
@@ -1048,21 +1050,23 @@ namespace Photoshop.Logic
             Marshal.Copy(srcData.Scan0, buffer, 0, bytes);
             bitmap.UnlockBits(srcData);
 
-            Parallel.For(halfsize, height - halfsize, y =>
+            double[] rgb = new double[3];
+            int kcenter = 0;
+            int kpixel = 0;
+            for (int y = halfsize; y < height - halfsize; y++)
             {
                 for (int x = halfsize; x < width - halfsize; x++)
                 {
-                    double[] rgb = new double[3];
-                    int kcenter = y * srcData.Stride + x * 4;
                     for (int c = 0; c < 3; c++)
                     {
                         rgb[c] = 0.0;
                     }
+                    kcenter = y * srcData.Stride + x * 4;
                     for (int fy = -halfsize; fy <= halfsize; fy++)
                     {
                         for (int fx = -halfsize; fx <= halfsize; fx++)
                         {
-                            int kpixel = kcenter + fy * srcData.Stride + fx * 4;
+                            kpixel = kcenter + fy * srcData.Stride + fx * 4;
                             for (int c = 0; c < 3; c++)
                             {
                                 rgb[c] += (double)(buffer[kpixel + c]) * kernel[fy + halfsize, fx + halfsize];
@@ -1080,15 +1084,13 @@ namespace Photoshop.Logic
                             rgb[c] = 0;
                         }
                     }
-                    int kcenterR = kcenter + 2;
-                    int kcenterG = kcenter + 1;
-                    int kcenterB = kcenter;
-                    result[kcenterR] = (byte)rgb[0];
-                    result[kcenterG] = (byte)rgb[1];
-                    result[kcenterB] = (byte)rgb[2];
+                    for (int c = 0; c < 3; c++)
+                    {
+                        result[kcenter + c] = (byte)rgb[c];
+                    }
+                    result[kcenter + 3] = 255;
                 }
-            });
-
+            }
             Bitmap resultImage = new Bitmap(width, height);
             BitmapData resultData = resultImage.LockBits(new Rectangle(0, 0, width, height),
                 ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
@@ -1099,6 +1101,56 @@ namespace Photoshop.Logic
 
             return true;
         }
+        public bool ApplyGaussianFilter2(int size, double weight)
+        {
+            double weightSquared = 2 * weight * weight;
+            int halfSize = (size - 1) / 2;
+
+            Bitmap sourceBitmap = ConvertByteArrayToBitmap(Images.Peek());
+            Bitmap resultBitmap = new Bitmap(sourceBitmap.Width, sourceBitmap.Height);
+
+            using (Graphics g = Graphics.FromImage(resultBitmap))
+            {
+                g.DrawImage(sourceBitmap, 0, 0);
+            }
+
+
+            for (int y = halfSize; y < sourceBitmap.Height - halfSize; y++)
+            {
+                for (int x = halfSize; x < sourceBitmap.Width - halfSize; x++)
+                {
+                    double[] rgb = { 0, 0, 0 };
+
+                    Parallel.For(-halfSize, halfSize,fy=>
+                    {
+                        for (int fx = -halfSize; fx <= halfSize; fx++)
+                        {
+                            Color pixel = resultBitmap.GetPixel(x + fx, y + fy);
+                            double kernelValue = Math.Exp(-(fx * fx + fy * fy) / weightSquared);
+
+                            rgb[0] += pixel.B * kernelValue;
+                            rgb[1] += pixel.G * kernelValue;
+                            rgb[2] += pixel.R * kernelValue;
+                        }
+                    });
+
+                    for (int c = 0; c < 3; c++)
+                    {
+                        rgb[c] = Math.Min(255, Math.Max(0, rgb[c]));
+                    }
+
+                    resultBitmap.SetPixel(x, y, Color.FromArgb((int)rgb[2], (int)rgb[1], (int)rgb[0]));
+                }
+            }
+
+            Images.Push(ConvertBitmapToByteArray(resultBitmap, ImageFormat.Jpeg));
+
+            return true;
+        }
+
+
+
+
 
 
         public bool ApplySobelEdgeDetection()
