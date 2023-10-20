@@ -37,6 +37,17 @@ namespace Photoshop.Controllers
             byte[] img = PLogic.Instance.GetImage();
             return FormatJSON(img, elapsedTime);
         }
+        public IActionResult Opt_Gamma(string colors)
+        {
+            string[] splitted = colors.Split(";");
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.OptGamma(
+                Convert.ToDouble(splitted[0]),
+                Convert.ToDouble(splitted[1]),
+                Convert.ToDouble(splitted[2])
+            ));
+            byte[] img = PLogic.Instance.GetImage();
+            return FormatJSON(img, elapsedTime);
+        }
 
         public IActionResult Invert()
         {
@@ -205,7 +216,14 @@ namespace Photoshop.Controllers
         }
         public IActionResult Harris()
         {
-            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.ApplyHarrisCornerDetection5());
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.ApplyHarrisCornerDetection());
+
+            byte[] img = PLogic.Instance.GetImage();
+            return FormatJSON(img, elapsedTime);
+        }
+        public IActionResult Opt_Harris()
+        {
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.OptApplyHarrisCornerDetection());
 
             byte[] img = PLogic.Instance.GetImage();
             return FormatJSON(img, elapsedTime);

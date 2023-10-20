@@ -405,7 +405,9 @@
 
         applyGammaCheckbox.addEventListener('click', function () {
             if (chk_opt.checked) {
-
+                url = '@Url.Action("Opt_Gamma", "Home", new {
+                      colors="PLACEHOLDER_COLORS",
+                })'
             } else {
                 url = '@Url.Action("Gamma", "Home", new {
                       colors="PLACEHOLDER_COLORS",

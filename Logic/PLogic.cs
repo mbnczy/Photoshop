@@ -11,8 +11,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Photoshop.Logic
 {
-	public class PLogic
-	{
+    public class PLogic
+    {
 
         private static PLogic instance = null;
         public static PLogic Instance
@@ -41,7 +41,7 @@ namespace Photoshop.Logic
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            action.Invoke(); // Execute the function
+            action.Invoke();
 
             stopwatch.Stop();
 
@@ -166,7 +166,6 @@ namespace Photoshop.Logic
                 {
                     byte* p = (byte*)(void*)Scan0 + y * stride;
                     int nOffset = stride - width * 3;
-                    byte red, green, blue;
 
                     for (int x = 0; x < width; ++x)
                     {
@@ -264,7 +263,6 @@ namespace Photoshop.Logic
             Images.Push(ConvertBitmapToByteArray(b, ImageFormat.Jpeg));
             return true;
         }
-
 
 
         public bool Contrast(int nContrast)
@@ -442,60 +440,7 @@ namespace Photoshop.Logic
         }
 
 
-        public bool Gamma(double red, double green, double blue)
-        {
-            Bitmap b = ConvertByteArrayToBitmap(Images.Peek());
-
-            BitmapData bmData = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
-                ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
-            int stride = bmData.Stride;
-            System.IntPtr Scan0 = bmData.Scan0;
-            int nWidth = b.Width * 3;
-
-            byte[] redGamma = new byte[256];
-            byte[] greenGamma = new byte[256];
-            byte[] blueGamma = new byte[256];
-
-            for (int i = 0; i < 256; ++i)
-            {
-                redGamma[i] = (byte)Math.Min(255, (int)((255.0
-                    * Math.Pow(i / 255.0, 1.0 / red)) + 0.5));
-                greenGamma[i] = (byte)Math.Min(255, (int)((255.0
-                    * Math.Pow(i / 255.0, 1.0 / green)) + 0.5));
-                blueGamma[i] = (byte)Math.Min(255, (int)((255.0
-                    * Math.Pow(i / 255.0, 1.0 / blue)) + 0.5));
-            }
-
-            unsafe
-            {
-                byte* p = (byte*)(void*)Scan0;
-                int nOffset = stride - b.Width * 3;
-
-                for (int y = 0; y < b.Height; ++y)
-                {
-                    for (int x = 0; x < nWidth; ++x)
-                    {
-                        if (x % 3 == 0) // Red component
-                            p[0] = blueGamma[p[0]];
-                        else if (x % 3 == 1) // Green component
-                            p[1] = redGamma[p[1]];
-                        else if (x % 3 == 2) // Blue component
-                            p[2] = greenGamma[p[2]];
-
-                        ++p;
-                    }
-                    p += nOffset;
-                }
-            }
-
-            b.UnlockBits(bmData);
-
-
-            Images.Push(ConvertBitmapToByteArray(b, ImageFormat.Jpeg));
-
-            return true;
-        }
-        public bool Gamma2(double gammaRed, double gammaGreen, double gammaBlue)
+        public bool Gamma(double gammaRed, double gammaGreen, double gammaBlue)
         {
             Bitmap b = ConvertByteArrayToBitmap(Images.Peek());
             BitmapData bmData = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
@@ -503,7 +448,7 @@ namespace Photoshop.Logic
             int stride = bmData.Stride;
             System.IntPtr Scan0 = bmData.Scan0;
             int nWidth = b.Width * 3;
-            // Define the gamma correction factors for each channel
+
             double gammaCorrectionRed = 1.0 / gammaRed;
             double gammaCorrectionGreen = 1.0 / gammaGreen;
             double gammaCorrectionBlue = 1.0 / gammaBlue;
@@ -541,11 +486,110 @@ namespace Photoshop.Logic
             Images.Push(ConvertBitmapToByteArray(b, ImageFormat.Jpeg));
             return true;
         }
+        public bool OptGamma(double gammaRed, double gammaGreen, double gammaBlue)
+        {
+            Bitmap b = ConvertByteArrayToBitmap(Images.Peek());
+            BitmapData bmData = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
+                ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+            int stride = bmData.Stride;
+
+            double gammaCorrectionRed = 1.0 / gammaRed;
+            double gammaCorrectionGreen = 1.0 / gammaGreen;
+            double gammaCorrectionBlue = 1.0 / gammaBlue;
+
+
+            int bytesPerPixel = Image.GetPixelFormatSize(b.PixelFormat) / 8;
+
+
+            unsafe
+            {
+                byte* ptr = (byte*)bmData.Scan0;
+
+                Parallel.For(0, b.Height, y =>
+                {
+                    for (int x = 0; x < b.Width; x++)
+                    {
+                        int offset = y * bmData.Stride + x * bytesPerPixel;
+
+                        byte red = ptr[offset + 2];
+                        byte green = ptr[offset + 1];
+                        byte blue = ptr[offset];
+
+                        byte newRed = (byte)(255 * Math.Pow(red / 255.0, gammaCorrectionRed));
+                        byte newGreen = (byte)(255 * Math.Pow(green / 255.0, gammaCorrectionGreen));
+                        byte newBlue = (byte)(255 * Math.Pow(blue / 255.0, gammaCorrectionBlue));
+
+                        ptr[offset + 2] = newRed;
+                        ptr[offset + 1] = newGreen;
+                        ptr[offset] = newBlue;
+                    }
+                });
+            }
+
+            b.UnlockBits(bmData);
+            Images.Push(ConvertBitmapToByteArray(b, ImageFormat.Jpeg));
+            return true;
+        }
+
+        public bool Gamma1(double red, double green, double blue)
+        {
+            Bitmap b = ConvertByteArrayToBitmap(Images.Peek());
+
+            BitmapData bmData = b.LockBits(new Rectangle(0, 0, b.Width, b.Height),
+                ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+            int stride = bmData.Stride;
+            System.IntPtr Scan0 = bmData.Scan0;
+            int nWidth = b.Width * 3;
+
+            byte[] redGamma = new byte[256];
+            byte[] greenGamma = new byte[256];
+            byte[] blueGamma = new byte[256];
+
+            for (int i = 0; i < 256; ++i)
+            {
+                redGamma[i] = (byte)Math.Min(255, (int)((255.0
+                    * Math.Pow(i / 255.0, 1.0 / red)) + 0.5));
+                greenGamma[i] = (byte)Math.Min(255, (int)((255.0
+                    * Math.Pow(i / 255.0, 1.0 / green)) + 0.5));
+                blueGamma[i] = (byte)Math.Min(255, (int)((255.0
+                    * Math.Pow(i / 255.0, 1.0 / blue)) + 0.5));
+            }
+
+            unsafe
+            {
+                byte* p = (byte*)(void*)Scan0;
+                int nOffset = stride - b.Width * 3;
+
+                for (int y = 0; y < b.Height; ++y)
+                {
+                    for (int x = 0; x < nWidth; ++x)
+                    {
+                        if (x % 3 == 0) //red
+                            p[0] = blueGamma[p[0]];
+                        else if (x % 3 == 1) //green
+                            p[1] = redGamma[p[1]];
+                        else if (x % 3 == 2) //blue
+                            p[2] = greenGamma[p[2]];
+
+                        ++p;
+                    }
+                    p += nOffset;
+                }
+            }
+
+            b.UnlockBits(bmData);
+
+
+            Images.Push(ConvertBitmapToByteArray(b, ImageFormat.Jpeg));
+
+            return true;
+        }
+
 
         public int[] CreateHistogramWPtr254()
         {
             Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
-            int[] histogram = new int[256]; // 256 possible intensity values
+            int[] histogram = new int[256];
 
             BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
                 ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
@@ -576,7 +620,7 @@ namespace Photoshop.Logic
         public int[] CreateHistogramWPtr()
         {
             Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
-            int[] histogram = new int[256]; // 256 possible intensity values
+            int[] histogram = new int[256]; 
 
             BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
                 ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
@@ -604,7 +648,7 @@ namespace Photoshop.Logic
         public int[] CreateHistogram()
         {
             Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
-            int[] histogram = new int[256]; // 256 possible intensity values
+            int[] histogram = new int[256]; 
 
             for (int y = 0; y < bitmap.Height; y++)
             {
@@ -612,7 +656,6 @@ namespace Photoshop.Logic
                 {
                     Color pixel = bitmap.GetPixel(x, y);
                     int intensity = (int)(0.299 * pixel.R + 0.587 * pixel.G + 0.114 * pixel.B);
-                    //int intensity = (int)(pixel.R + pixel.G + pixel.B);
                     histogram[intensity]++;
                 }
             }
@@ -622,7 +665,7 @@ namespace Photoshop.Logic
         public int[] CreateHistogramWColor254()
         {
             Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
-            int[] histogram = new int[256]; // 256 possible intensity values
+            int[] histogram = new int[256];
 
             for (int y = 0; y < bitmap.Height; y++)
             {
@@ -630,7 +673,7 @@ namespace Photoshop.Logic
                 {
                     Color pixel = bitmap.GetPixel(x, y);
                     int intensity = (int)(0.299 * pixel.R + 0.587 * pixel.G + 0.114 * pixel.B);
-                    //int intensity = (int)(pixel.R + pixel.G + pixel.B);
+
                     if (intensity!=255)
                     {
                         histogram[intensity]++;
@@ -663,7 +706,6 @@ namespace Photoshop.Logic
                     cdf[i] = cdf[i - 1] + histogram_[i];
                 }
 
-                // Equalize the image using pointers
                 for (int i = 0; i < totalPixels*3; i++)
                 {
                     ptr[i] = (byte)((cdf[ptr[i]] * 255) / totalPixels);
@@ -831,7 +873,7 @@ namespace Photoshop.Logic
                 }
             }
 
-            // Normalize the kernel
+            //normalize
             for (int y = 0; y < size; y++)
             {
                 for (int x = 0; x < size; x++)
@@ -840,7 +882,7 @@ namespace Photoshop.Logic
                 }
             }
             
-            //Apply the Gaussian filter
+            //gauss
             int kernelCenter = size / 2;
             for (int x = 0; x < width; x++)
             {
@@ -882,7 +924,6 @@ namespace Photoshop.Logic
         }
         public bool ApplyGaussianFilter2(int size, double weight)
         {
-            //kernel
             double[,] kernel = new double[size, size];
             double kernelSum = 0;
             double dist = 0;
@@ -972,7 +1013,6 @@ namespace Photoshop.Logic
         }
         public bool OptApplyGaussianFilter2(int size, double weight)
         {
-            // Kernel
             double[,] kernel = new double[size, size];
             double kernelSum = 0;
             double dist = 0;
@@ -995,7 +1035,6 @@ namespace Photoshop.Logic
                 }
             }
 
-            // Apply filter
             Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
             int width = bitmap.Width;
             int height = bitmap.Height;
@@ -1116,9 +1155,7 @@ namespace Photoshop.Logic
                             }
                         }
 
-                        // Gradiens nagyság számítása
-
-                        // Küszöbölés: Ha a gradiens nagysága meghaladja a küszöbértéket, ott él van
+                        //kuszoboles
                         double redGradient = Math.Sqrt((gxRed * gxRed) + (gyRed * gyRed));
                         double greenGradient = Math.Sqrt((gxGreen * gxGreen) + (gyGreen * gyGreen));
                         double blueGradient = Math.Sqrt((gxBlue * gxBlue) + (gyBlue * gyBlue));
@@ -1139,7 +1176,7 @@ namespace Photoshop.Logic
 
                         //outputPixelPtr[2] = (byte)redGradient;
                         //outputPixelPtr[1] = (byte)greenGradient;
-                        //outputPixelPtr[0] = (byte)blueGradient;
+                        //outputPixelPtr[0] = (byte)blueGradient; //valamiert nem megy
                         Color edgeColor = Color.FromArgb((int)redGradient, (int)greenGradient, (int)blueGradient);
                         bitmap.SetPixel(x, y, edgeColor);
                     }
@@ -1160,16 +1197,16 @@ namespace Photoshop.Logic
 
             int[,] sobelX = new int[,]
             {
-        { 1, 0, -1 },
-        { 2, 0, -2 },
-        { 1, 0, -1 }
+                { 1, 0, -1 },
+                { 2, 0, -2 },
+                { 1, 0, -1 }
             };
 
             int[,] sobelY = new int[,]
             {
-        { 1, 2, 1 },
-        { 0, 0, 0 },
-        { -1, -2, -1 }
+                { 1, 2, 1 },
+                { 0, 0, 0 },
+                { -1, -2, -1 }
             };
 
             BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, width, height),
@@ -1180,7 +1217,6 @@ namespace Photoshop.Logic
                 byte* ptr = (byte*)bitmapData.Scan0.ToPointer();
                 int stride = bitmapData.Stride;
 
-                // Create a parallel loop for processing different rows in parallel
                 Parallel.For(1, height - 1, y =>
                 {
                     for (int x = 1; x < width - 1; x++)
@@ -1206,9 +1242,7 @@ namespace Photoshop.Logic
                             }
                         }
 
-                        // Gradiens nagyság számítása
-
-                        // Küszöbölés: Ha a gradiens nagysága meghaladja a küszöbértéket, ott él van
+                        //kuszoboles
                         double redGradient = Math.Sqrt((gxRed * gxRed) + (gyRed * gyRed));
                         double greenGradient = Math.Sqrt((gxGreen * gxGreen) + (gyGreen * gyGreen));
                         double blueGradient = Math.Sqrt((gxBlue * gxBlue) + (gyBlue * gyBlue));
@@ -1307,7 +1341,6 @@ namespace Photoshop.Logic
                 byte* ptr = (byte*)bitmapData.Scan0.ToPointer();
                 int stride = bitmapData.Stride;
 
-                // Process each block in parallel
                 Parallel.For(1, height - 1, y =>
                 {
                     for (int x = 1; x < width - 1; x++)
@@ -1340,12 +1373,6 @@ namespace Photoshop.Logic
 
         public bool ApplyLoGEdgeDetection()
         {
-            //double[,] gaussianKernel = new double[,]
-            //{
-            //    { 0.0625, 0.125, 0.0625 },
-            //    { 0.125, 0.25, 0.125 },
-            //    { 0.0625, 0.125, 0.0625 }
-            //};
 
             int[,] laplaceKernel = new int[,]
             {
@@ -1354,7 +1381,6 @@ namespace Photoshop.Logic
                 { 0, 1, 0 }
             };
 
-            // Apply Gaussian filter to the image
             this.ApplyGaussianFilter(5, 3);
 
 
@@ -1382,7 +1408,7 @@ namespace Photoshop.Logic
                             {
                                 byte* pixelPtr = ptr + (y + j) * stride + (x + i) * 3;
 
-                                laplaceSum += laplaceKernel[j + 1, i + 1] * pixelPtr[2]; // Red channel
+                                laplaceSum += laplaceKernel[j + 1, i + 1] * pixelPtr[2]; //red
                             }
                         }
 
@@ -1437,463 +1463,24 @@ namespace Photoshop.Logic
         public bool ApplyHarrisCornerDetection()
         {
             Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
-            int width = bitmap.Width;
-            int height = bitmap.Height;
-            int stride = width * 3;
-            int threshold = 1000;
-            double k = -0.04; // Harris corner constant (adjust as needed)
-
-            List<Point> corners = new List<Point>();
-
-            BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, width, height),
-                ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
-
-            unsafe
-            {
-                byte* inputPtr = (byte*)bitmapData.Scan0.ToPointer();
-                int offset = stride - width * 3;
-
-                for (int y = 0; y < height; y++)
-                {
-                    for (int x = 0; x < width; x++)
-                    {
-                        // Calculate Harris corner response
-                        double IxIx = 0, IyIy = 0, IxIy = 0;
-
-                        for (int j = -1; j <= 1; j++)
-                        {
-                            for (int i = -1; i <= 1; i++)
-                            {
-                                byte* pixelPtr = inputPtr + (y + j) * stride + (x + i) * 3;
-                                double grayValue = 0.299 * pixelPtr[2] + 0.587 * pixelPtr[1] + 0.114 * pixelPtr[0];
-
-                                IxIx += grayValue * grayValue;
-                                IyIy += grayValue * grayValue;
-                                IxIy += grayValue * grayValue;
-                            }
-                        }
-
-                        // Harris corner response formula
-                        double detM = (IxIx * IyIy) - (IxIy * IxIy);
-                        double traceM = IxIx + IyIy;
-                        double cornerResponse = detM - k * (traceM * traceM);
-
-                        // Mark the pixel as a corner in the input image
-                        if (cornerResponse > threshold)
-                        {
-                            corners.Add(new Point(x, y));
-                        }
-                        
-                        inputPtr += 3;
-                    }
-
-                    inputPtr += offset;
-                }
-            }
-            
-            using (Graphics graphics = Graphics.FromImage(bitmap))
-            using (Pen pen = new Pen(Color.Red, 2)) // Red pen for drawing corners
-            {
-                foreach (Point corner in corners)
-                {
-                    int markerSize = 1; // Size of the marker
-                    int x = corner.X - markerSize / 2;
-                    int y = corner.Y - markerSize / 2;
-
-                    graphics.DrawEllipse(pen, x, y, markerSize, markerSize);
-                }
-            }
-
-
-
-            Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
-            bitmap.UnlockBits(bitmapData);
-
-
-            return true;
-        }
-        public bool ApplyHarrisCornerDetection2()
-        {
-            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
-            int width = bitmap.Width;
-            int height = bitmap.Height;
-            int stride = width * 3;
-            int threshold = 1000;
-            double k = 0.04; // Corrected the Harris corner constant (typically positive)
-
-            List<Point> corners = new List<Point>();
-
-            BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, width, height),
-                ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
-
-            unsafe
-            {
-                byte* inputPtr = (byte*)bitmapData.Scan0.ToPointer();
-                int offset = stride - width * 3;
-
-                for (int y = 0; y < height; y++)
-                {
-                    for (int x = 0; x < width; x++)
-                    {
-                        // Calculate Harris corner response
-                        double IxIx = 0, IyIy = 0, IxIy = 0;
-
-                        for (int j = -1; j <= 1; j++)
-                        {
-                            for (int i = -1; i <= 1; i++)
-                            {
-                                byte* pixelPtr = inputPtr + (y + j) * stride + (x + i) * 3;
-                                double grayValue = 0.299 * pixelPtr[2] + 0.587 * pixelPtr[1] + 0.114 * pixelPtr[0];
-
-                                IxIx += grayValue * grayValue;
-                                IyIy += grayValue * grayValue;
-                                IxIy += grayValue * grayValue;
-                            }
-                        }
-
-                        // Harris corner response formula
-                        double detM = (IxIx * IyIy) - (IxIy * IxIy);
-                        double traceM = IxIx + IyIy;
-                        double cornerResponse = detM - k * (traceM * traceM);
-
-                        // Mark the pixel as a corner in the input image
-                        if (cornerResponse > threshold)
-                        {
-                            corners.Add(new Point(x, y));
-                        }
-
-                        inputPtr += 3;
-                    }
-
-                    inputPtr += offset;
-                }
-            }
-
-            using (Graphics graphics = Graphics.FromImage(bitmap))
-            using (Pen pen = new Pen(Color.Red, 2)) // Red pen for drawing corners
-            {
-                foreach (Point corner in corners)
-                {
-                    int markerSize = 1; // Size of the marker
-                    int x = corner.X - markerSize / 2;
-                    int y = corner.Y - markerSize / 2;
-
-                    graphics.DrawEllipse(pen, x, y, markerSize, markerSize);
-                }
-            }
-
-            bitmap.UnlockBits(bitmapData);
-            Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
-
-            return true;
-        }
-        public unsafe bool ApplyHarrisCornerDetection3()
-        {
-            // Make sure we have a grayscale image
-            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
-
-            if (bitmap.PixelFormat != PixelFormat.Format8bppIndexed)
-            {
-                // Create a temporary grayscale image
-                this.GrayScale();
-                bitmap = ConvertByteArrayToBitmap(Images.Peek());
-            }
-
-            // Get source image size
-            int width = bitmap.Width;
-            int height = bitmap.Height;
-            int srcStride = width * 3;
-            int srcOffset = srcStride - width;
-
-            BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, width, height),
-                ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
-
-            // 1. Calculate partial differences
-            float[,] diffx = new float[height, width];
-            float[,] diffy = new float[height, width];
-            float[,] diffxy = new float[height, width];
-
-            fixed (float* pdx = diffx, pdy = diffy, pdxy = diffxy)
-            {
-                byte* ptr = (byte*)bitmapData.Scan0.ToPointer() + srcStride + 1;
-
-                float* dx = pdx + width + 1;
-                float* dy = pdy + width + 1;
-                float* dxy = pdxy + width + 1;
-
-                for (int y = 1; y < height - 1; y++)
-                {
-                    for (int x = 1; x < width - 1; x++, ptr++, dx++, dy++, dxy++)
-                    {
-                        // Convolution with horizontal differentiation kernel mask
-                        float h = ((ptr[-srcStride + 1] + ptr[+1] + ptr[srcStride + 1]) -
-                                    (ptr[-srcStride - 1] + ptr[-1] + ptr[srcStride - 1])) * 0.166666667f;
-
-                        // Convolution vertical differentiation kernel mask
-                        float v = ((ptr[+srcStride - 1] + ptr[+srcStride] + ptr[+srcStride + 1]) -
-                                    (ptr[-srcStride - 1] + ptr[-srcStride] + ptr[-srcStride + 1])) * 0.166666667f;
-
-                        // Store squared differences directly
-                        *dx = h * h;
-                        *dy = v * v;
-                        *dxy = h * v;
-                    }
-
-                    // Skip last column
-                    dx++;
-                    dy++;
-                    dxy++;
-                    ptr += srcOffset + 1;
-                }
-            }
-
-
-            // 3. Compute Harris Corner Response Map
-            float[,] map = new float[height, width];
-
-            double k = 0.06;
-            int threshold = 1000;
-
-            fixed (float* pdx = diffx, pdy = diffy, pdxy = diffxy, pmap = map)
-            {
-                float* dx = pdx;
-                float* dy = pdy;
-                float* dxy = pdxy;
-                float* H = pmap;
-                float M, A, B, C;
-
-                for (int y = 0; y < height; y++)
-                {
-                    for (int x = 0; x < width; x++, dx++, dy++, dxy++, H++)
-                    {
-                        A = *dx;
-                        B = *dy;
-                        C = *dxy;
-
-                        M = -1*(float)((A * B - C * C) - (k * ((A + B) * (A + B))));
-
-                        if (M > threshold)
-                        {
-                            *H = M; // insert value in the map
-                        }
-                    }
-                }
-            }
-
-            // 4. Suppress non-maximum points
-            List<Point> cornersList = new List<Point>();
-            int r = 3;
-            // for each row
-            for (int y = r, maxY = height - r; y < maxY; y++)
-            {
-                // for each pixel
-                for (int x = r, maxX = width - r; x < maxX; x++)
-                {
-                    float currentValue = map[y, x];
-
-                    // for each windows' row
-                    for (int i = -r; (currentValue != 0) && (i <= r); i++)
-                    {
-                        // for each windows' pixel
-                        for (int j = -r; j <= r; j++)
-                        {
-                            if (map[y + i, x + j] > currentValue)
-                            {
-                                currentValue = 0;
-                                break;
-                            }
-                        }
-                    }
-
-                    // check if this point is really interesting
-                    if (currentValue != 0)
-                    {
-                        cornersList.Add(new Point(x, y));
-                    }
-                }
-            }
-            using (Graphics graphics = Graphics.FromImage(bitmap))
-            using (Pen pen = new Pen(Color.Red, 2)) // Red pen for drawing corners
-            {
-                foreach (Point corner in cornersList)
-                {
-                    int markerSize = 1; // Size of the marker
-                    int x = corner.X - markerSize / 2;
-                    int y = corner.Y - markerSize / 2;
-
-                    graphics.DrawEllipse(pen, x, y, markerSize, markerSize);
-                }
-            }
-
-            bitmap.UnlockBits(bitmapData);
-            Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
-            return true;
-        }
-        public unsafe bool ApplyHarrisCornerDetection4()
-        {
-            // Make sure we have a grayscale image
-            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
-
-            if (bitmap.PixelFormat != PixelFormat.Format8bppIndexed)
-            {
-                // Create a temporary grayscale image
-                this.GrayScale();
-                bitmap = ConvertByteArrayToBitmap(Images.Peek());
-            }
-
-            // Get source image size
-            int width = bitmap.Width;
-            int height = bitmap.Height;
-            int srcStride = width * 3;
-            int srcOffset = srcStride - width;
-
-            BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, width, height),
-                ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
-
-            // 1. Calculate partial differences
-            float[,] diffx = new float[height, width];
-            float[,] diffy = new float[height, width];
-            float[,] diffxy = new float[height, width];
-
-            fixed (float* pdx = diffx, pdy = diffy, pdxy = diffxy)
-            {
-                byte* ptr = (byte*)bitmapData.Scan0.ToPointer() + srcStride + 1;
-
-                float* dx = pdx + width + 1;
-                float* dy = pdy + width + 1;
-                float* dxy = pdxy + width + 1;
-
-                for (int y = 1; y < height - 1; y++)
-                {
-                    for (int x = 1; x < width - 1; x++, ptr++, dx++, dy++, dxy++)
-                    {
-                        // Convolution with horizontal differentiation kernel mask
-                        float h = ((ptr[-srcStride + 1] + ptr[+1] + ptr[srcStride + 1]) -
-                                    (ptr[-srcStride - 1] + ptr[-1] + ptr[srcStride - 1])) * 0.166666667f;
-
-                        // Convolution vertical differentiation kernel mask
-                        float v = ((ptr[+srcStride - 1] + ptr[+srcStride] + ptr[+srcStride + 1]) -
-                                    (ptr[-srcStride - 1] + ptr[-srcStride] + ptr[-srcStride + 1])) * 0.166666667f;
-
-                        // Store squared differences directly
-                        *dx = h * h;
-                        *dy = v * v;
-                        *dxy = h * v;
-                    }
-
-                    // Skip the last column
-                    dx++;
-                    dy++;
-                    dxy++;
-                    ptr += srcOffset + 1;
-                }
-            }
-
-            // 3. Compute Harris Corner Response Map
-            float[,] map = new float[height, width];
-
-            float k = 0.06f; // Declare 'k' as a float
-            float threshold = 1000.0f; // Declare 'threshold' as a float
-
-            fixed (float* pdx = diffx, pdy = diffy, pdxy = diffxy, pmap = map)
-            {
-                float* dx = pdx;
-                float* dy = pdy;
-                float* dxy = pdxy;
-                float* H = pmap;
-                float M, A, B, C;
-
-                for (int y = 0; y < height; y++)
-                {
-                    for (int x = 0; x < width; x++, dx++, dy++, dxy++, H++)
-                    {
-                        A = *dx;
-                        B = *dy;
-                        C = *dxy;
-
-                        // Original Harris corner measure
-                        M = -1 * ((A * B - C * C) - (k * ((A + B) * (A + B))));
-
-                        if (M > threshold)
-                        {
-                            *H = M; // insert value in the map
-                        }
-                    }
-                }
-            }
-
-            // 4. Suppress non-maximum points
-            List<Point> cornersList = new List<Point>();
-            int r = 3;
-
-            // for each row
-            for (int y = r, maxY = height - r; y < maxY; y++)
-            {
-                // for each pixel
-                for (int x = r, maxX = width - r; x < maxX; x++)
-                {
-                    float currentValue = map[y, x];
-
-                    // for each windows' row
-                    for (int i = -r; (currentValue != 0) && (i <= r); i++)
-                    {
-                        // for each windows' pixel
-                        for (int j = -r; j <= r; j++)
-                        {
-                            if (map[y + i, x + j] > currentValue)
-                            {
-                                currentValue = 0;
-                                break;
-                            }
-                        }
-                    }
-
-                    // check if this point is really interesting
-                    if (currentValue != 0)
-                    {
-                        cornersList.Add(new Point(x, y));
-                    }
-                }
-            }
-
-            using (Graphics graphics = Graphics.FromImage(bitmap))
-            using (Pen pen = new Pen(Color.Red, 2)) // Red pen for drawing corners
-            {
-                foreach (Point corner in cornersList)
-                {
-                    int markerSize = 1; // Size of the marker
-                    int x = corner.X - markerSize / 2;
-                    int y = corner.Y - markerSize / 2;
-
-                    graphics.DrawEllipse(pen, x, y, markerSize, markerSize);
-                }
-            }
-
-            bitmap.UnlockBits(bitmapData);
-            Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
-            return true;
-        }
-        public bool ApplyHarrisCornerDetection5()
-        {
-            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
 
             List<Point> corners = DetectCorners(bitmap, 100000000, 0.06, 3);
 
             BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
                 ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
             using (Graphics graphics = Graphics.FromImage(bitmap))
-            using (Pen pen = new Pen(Color.Red, 2)) // Red pen for drawing corners
+            using (Pen pen = new Pen(Color.Red, 2)) 
             {
                 foreach (Point corner in corners)
                 {
-                    int markerSize = 1; // Size of the marker
+                    int markerSize = 1; 
                     int x = corner.X - markerSize / 2;
                     int y = corner.Y - markerSize / 2;
 
                     graphics.DrawEllipse(pen, x, y, markerSize, markerSize);
                 }
             }
-
+            Images.Pop();
             bitmap.UnlockBits(bitmapData);
             Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
             return true;
@@ -1931,14 +1518,13 @@ namespace Photoshop.Logic
 
             int halfSize = windowSize / 2;
 
-            //harris corner response for each pixel
+
             for (int x = halfSize; x < width - halfSize; x++)
             {
                 for (int y = halfSize; y < height - halfSize; y++)
                 {
                     double sumA = 0, sumB = 0, sumC = 0;
 
-                    //sum elements in the window
                     for (int wx = -halfSize; wx <= halfSize; wx++)
                     {
                         for (int wy = -halfSize; wy <= halfSize; wy++)
@@ -1952,7 +1538,6 @@ namespace Photoshop.Logic
                         }
                     }
 
-                    //calc. the harris corner response
                     double detM = sumA * sumB - sumC * sumC;
                     double traceM = sumA + sumB;
                     double cornerResponse = detM - k * (traceM * traceM);
@@ -1963,6 +1548,70 @@ namespace Photoshop.Logic
                     }
                 }
             }
+
+            return corners;
+        }
+        public List<Point> DetectCornersOptimized(Bitmap image, double threshold, double k, int windowSize)
+        {
+            this.GrayScale();
+            Bitmap grayImage = ConvertByteArrayToBitmap(Images.Peek());
+
+            int width = grayImage.Width;
+            int height = grayImage.Height;
+
+            List<Point> corners = new List<Point>();
+
+            double[,] Ix = CalculateGradientXOptimized(grayImage);
+            double[,] Iy = CalculateGradientYOptimized(grayImage);
+
+            double[,] A = new double[width, height];
+            double[,] B = new double[width, height];
+            double[,] C = new double[width, height];
+
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    double iX = Ix[x, y];
+                    double iY = Iy[x, y];
+
+                    A[x, y] = iX * iX;
+                    B[x, y] = iY * iY;
+                    C[x, y] = iX * iY;
+                }
+            }
+
+            int halfSize = windowSize / 2;
+
+            Parallel.For(halfSize, width - halfSize, x =>
+            {
+                for (int y = halfSize; y < height - halfSize; y++)
+                {
+                    double sumA = 0, sumB = 0, sumC = 0;
+
+                    for (int wx = -halfSize; wx <= halfSize; wx++)
+                    {
+                        for (int wy = -halfSize; wy <= halfSize; wy++)
+                        {
+                            int nx = x + wx;
+                            int ny = y + wy;
+
+                            sumA += A[nx, ny];
+                            sumB += B[nx, ny];
+                            sumC += C[nx, ny];
+                        }
+                    }
+
+                    double detM = sumA * sumB - sumC * sumC;
+                    double traceM = sumA + sumB;
+                    double cornerResponse = detM - k * (traceM * traceM);
+
+                    if (cornerResponse > threshold)
+                    {
+                        corners.Add(new Point(x, y));
+                    }
+                }
+            });
 
             return corners;
         }
@@ -1984,6 +1633,35 @@ namespace Photoshop.Logic
 
             return gradientX;
         }
+        private double[,] CalculateGradientXOptimized(Bitmap image)
+        {
+            int width = image.Width;
+            int height = image.Height;
+            double[,] gradientX = new double[width, height];
+
+            BitmapData imageData = image.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+
+            unsafe
+            {
+                byte* ptr = (byte*)imageData.Scan0.ToPointer();
+                int stride = imageData.Stride;
+
+                for (int y = 0; y < height; y++)
+                {
+                    for (int x = 1; x < width - 1; x++)
+                    {
+                        int offset = y * stride + x * 3;
+                        double iX = ptr[offset + 3] - ptr[offset - 3]; 
+
+                        gradientX[x, y] = iX;
+                    }
+                }
+            }
+
+            image.UnlockBits(imageData);
+
+            return gradientX;
+        }
 
         private double[,] CalculateGradientY(Bitmap image)
         {
@@ -2001,6 +1679,63 @@ namespace Photoshop.Logic
             }
 
             return gradientY;
+        }
+        private double[,] CalculateGradientYOptimized(Bitmap image)
+        {
+            int width = image.Width;
+            int height = image.Height;
+            double[,] gradientY = new double[width, height];
+
+            BitmapData imageData = image.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+
+            unsafe
+            {
+                byte* ptr = (byte*)imageData.Scan0.ToPointer();
+                int stride = imageData.Stride;
+
+                for (int y = 1; y < height - 1; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        int offset = y * stride + x * 3;
+                        double iY = ptr[offset + stride] - ptr[offset - stride];
+
+                        gradientY[x, y] = iY;
+                    }
+                }
+            }
+
+            image.UnlockBits(imageData);
+
+            return gradientY;
+        }
+
+        public bool OptApplyHarrisCornerDetection()
+        {
+            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
+
+            List<Point> corners = DetectCornersOptimized(bitmap, 100000000, 0.06, 3);
+
+            BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
+                ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+            using (Graphics graphics = Graphics.FromImage(bitmap))
+            using (Pen pen = new Pen(Color.Red, 2))
+            {
+                int markerSize = 1;
+                int halfmarkerSize = markerSize / 2;
+                Parallel.ForEach(corners, corner =>
+                {
+                    int x = corner.X - halfmarkerSize;
+                    int y = corner.Y - halfmarkerSize;
+
+                    graphics.DrawEllipse(pen, x, y, markerSize, markerSize);
+                });
+                
+            }
+            Images.Pop();
+            bitmap.UnlockBits(bitmapData);
+            Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
+            return true;
         }
 
 
@@ -2067,10 +1802,6 @@ namespace Photoshop.Logic
             {
                 byte[] buffer = new byte[img.Length];
                 stream.Read(buffer, 0, (int)img.Length);
-
-                // Set Image and ContentType properties using reflection
-                //Color.GetType().GetProperty("Image" + (i + 1)).SetValue(Color, buffer);
-                //Color.GetType().GetProperty("ContentType" + (i + 1)).SetValue(Color, Color.PictureData[i].ContentType);
             }
         }
         public int[] Bad_hist()
