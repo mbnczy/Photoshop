@@ -71,10 +71,18 @@
             color: #fff;
             border: none;
             cursor: pointer;
+            margin:5px;
         }
         h1 {
             display: block;
             margin-bottom: 10px;
+        }
+        .lefty {
+            font-size: larger;
+            font-weight: bold;
+            text-align: left;
+            display: inline;
+            align-content:end;
         }
     </style>
 </head>
@@ -89,10 +97,10 @@
         
         <div class="controls-column">
             <div class="controls">
-                <label>Elapsed time: </label><label id="runtime"></label><label> sec</label>
+                <label class="lefty">Elapsed time: </label><label id="runtime" class="lefty"></label><label class="lefty"> sec</label>
                 <br>
-                <label>Optimalize: </label><input type="checkbox" id="chk_opt"/>
-
+                <label class="lefty">Optimalize: </label><input type="checkbox" id="chk_opt" class="lefty"/>
+                <br>
                 <form action="@Url.Action("Index", "Home")" method="post" enctype="multipart/form-data">
                     <input type="file" id="file-input" name="img">
                     <input type="submit" value="Upload" id="uploadsubmit" action="">
@@ -123,7 +131,7 @@
                 <br>
                 <button id="btnbox">Apply Avg Filter (Box)</button>
                 <br>
-                <input type="range" id="box" min="0" max="50" step="1" value="0"><span id="box-value">0</span>
+                <input type="range" id="box" min="1" max="50" step="2" value="0"><span id="box-value">1</span>
                 <br>
                 <button id="btngauss">Apply Gauss Filter</button>
                 <br>
