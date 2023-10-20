@@ -166,6 +166,13 @@ namespace Photoshop.Controllers
             byte[] img = PLogic.Instance.GetImage();
             return FormatJSON(img, elapsedTime);
         }
+        public IActionResult Opt_GaussFilter(string id, string sigma)
+        {
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.ApplyGaussianFilter(Convert.ToInt32(id), Convert.ToInt32(sigma)));
+
+            byte[] img = PLogic.Instance.GetImage();
+            return FormatJSON(img, elapsedTime);
+        }
 
         public IActionResult Sobel()
         {
@@ -174,10 +181,24 @@ namespace Photoshop.Controllers
             byte[] img = PLogic.Instance.GetImage();
             return FormatJSON(img, elapsedTime);
         }
+        public IActionResult Opt_Sobel()
+        {
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.OptApplySobelEdgeDetection());
+
+            byte[] img = PLogic.Instance.GetImage();
+            return FormatJSON(img, elapsedTime);
+        }
 
         public IActionResult Laplace()
         {
             TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.ApplyLaplaceEdgeDetection());
+
+            byte[] img = PLogic.Instance.GetImage();
+            return FormatJSON(img, elapsedTime);
+        }
+        public IActionResult Opt_Laplace()
+        {
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.OptApplyLaplaceEdgeDetection());
 
             byte[] img = PLogic.Instance.GetImage();
             return FormatJSON(img, elapsedTime);

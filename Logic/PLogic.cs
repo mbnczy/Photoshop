@@ -970,6 +970,97 @@ namespace Photoshop.Logic
 
             return true;
         }
+        public bool OptApplyGaussianFilter2(int size, double weight)
+        {
+            // Kernel
+            double[,] kernel = new double[size, size];
+            double kernelSum = 0;
+            double dist = 0;
+            int halfsize = (size - 1) / 2;
+            double constant = 1d / (2 * Math.PI * weight * weight);
+            for (int y = -halfsize; y <= halfsize; y++)
+            {
+                for (int x = -halfsize; x <= halfsize; x++)
+                {
+                    dist = ((y * y) + (x * x)) / (2 * weight * weight);
+                    kernel[y + halfsize, x + halfsize] = constant * Math.Exp(-dist);
+                    kernelSum += kernel[y + halfsize, x + halfsize];
+                }
+            }
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    kernel[y, x] = kernel[y, x] * 1d / kernelSum;
+                }
+            }
+
+            // Apply filter
+            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
+            int width = bitmap.Width;
+            int height = bitmap.Height;
+            BitmapData srcData = bitmap.LockBits(new Rectangle(0, 0, width, height),
+                ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+
+            int bytes = srcData.Stride * srcData.Height;
+            byte[] buffer = new byte[bytes];
+            byte[] result = new byte[bytes];
+
+            Marshal.Copy(srcData.Scan0, buffer, 0, bytes);
+            bitmap.UnlockBits(srcData);
+
+            Parallel.For(halfsize, height - halfsize, y =>
+            {
+                for (int x = halfsize; x < width - halfsize; x++)
+                {
+                    double[] rgb = new double[3];
+                    int kcenter = y * srcData.Stride + x * 4;
+                    for (int c = 0; c < 3; c++)
+                    {
+                        rgb[c] = 0.0;
+                    }
+                    for (int fy = -halfsize; fy <= halfsize; fy++)
+                    {
+                        for (int fx = -halfsize; fx <= halfsize; fx++)
+                        {
+                            int kpixel = kcenter + fy * srcData.Stride + fx * 4;
+                            for (int c = 0; c < 3; c++)
+                            {
+                                rgb[c] += (double)(buffer[kpixel + c]) * kernel[fy + halfsize, fx + halfsize];
+                            }
+                        }
+                    }
+                    for (int c = 0; c < 3; c++)
+                    {
+                        if (rgb[c] > 255)
+                        {
+                            rgb[c] = 255;
+                        }
+                        else if (rgb[c] < 0)
+                        {
+                            rgb[c] = 0;
+                        }
+                    }
+                    int kcenterR = kcenter + 2;
+                    int kcenterG = kcenter + 1;
+                    int kcenterB = kcenter;
+                    result[kcenterR] = (byte)rgb[0];
+                    result[kcenterG] = (byte)rgb[1];
+                    result[kcenterB] = (byte)rgb[2];
+                }
+            });
+
+            Bitmap resultImage = new Bitmap(width, height);
+            BitmapData resultData = resultImage.LockBits(new Rectangle(0, 0, width, height),
+                ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+            Marshal.Copy(result, 0, resultData.Scan0, bytes);
+            resultImage.UnlockBits(resultData);
+
+            Images.Push(ConvertBitmapToByteArray(resultImage, ImageFormat.Jpeg));
+
+            return true;
+        }
+
 
         public bool ApplySobelEdgeDetection()
         {
@@ -1060,6 +1151,93 @@ namespace Photoshop.Logic
             bitmap.UnlockBits(bitmapData);
             return true;
         }
+        public bool OptApplySobelEdgeDetection()
+        {
+            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
+
+            int width = bitmap.Width;
+            int height = bitmap.Height;
+
+            int[,] sobelX = new int[,]
+            {
+        { 1, 0, -1 },
+        { 2, 0, -2 },
+        { 1, 0, -1 }
+            };
+
+            int[,] sobelY = new int[,]
+            {
+        { 1, 2, 1 },
+        { 0, 0, 0 },
+        { -1, -2, -1 }
+            };
+
+            BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, width, height),
+                ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+
+            unsafe
+            {
+                byte* ptr = (byte*)bitmapData.Scan0.ToPointer();
+                int stride = bitmapData.Stride;
+
+                // Create a parallel loop for processing different rows in parallel
+                Parallel.For(1, height - 1, y =>
+                {
+                    for (int x = 1; x < width - 1; x++)
+                    {
+                        int gxRed = 0, gxGreen = 0, gxBlue = 0;
+                        int gyRed = 0, gyGreen = 0, gyBlue = 0;
+
+                        for (int j = -1; j <= 1; j++)
+                        {
+                            for (int i = -1; i <= 1; i++)
+                            {
+                                byte* pixelPtr = ptr + (y + j) * stride + (x + i) * 3;
+                                int sobelXValue = sobelX[j + 1, i + 1];
+                                int sobelYValue = sobelY[j + 1, i + 1];
+
+                                gxRed += pixelPtr[2] * sobelXValue;
+                                gxGreen += pixelPtr[1] * sobelXValue;
+                                gxBlue += pixelPtr[0] * sobelXValue;
+
+                                gyRed += pixelPtr[2] * sobelYValue;
+                                gyGreen += pixelPtr[1] * sobelYValue;
+                                gyBlue += pixelPtr[0] * sobelYValue;
+                            }
+                        }
+
+                        // Gradiens nagyság számítása
+
+                        // Küszöbölés: Ha a gradiens nagysága meghaladja a küszöbértéket, ott él van
+                        double redGradient = Math.Sqrt((gxRed * gxRed) + (gyRed * gyRed));
+                        double greenGradient = Math.Sqrt((gxGreen * gxGreen) + (gyGreen * gyGreen));
+                        double blueGradient = Math.Sqrt((gxBlue * gxBlue) + (gyBlue * gyBlue));
+                        double gradientMagnitude = (redGradient + greenGradient + blueGradient) / 3;
+
+                        if (gradientMagnitude > 200)
+                        {
+                            redGradient = 100;
+                            greenGradient = 100;
+                            blueGradient = 100;
+                        }
+                        else
+                        {
+                            redGradient = 0;
+                            greenGradient = 0;
+                            blueGradient = 0;
+                        }
+
+                        Color edgeColor = Color.FromArgb((int)redGradient, (int)greenGradient, (int)blueGradient);
+                        bitmap.SetPixel(x, y, edgeColor);
+                    }
+                });
+            }
+
+            Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
+            bitmap.UnlockBits(bitmapData);
+            return true;
+        }
+
 
         public bool ApplyLaplaceEdgeDetection()
         {
@@ -1101,10 +1279,6 @@ namespace Photoshop.Logic
 
                         Color edgeColor = Color.FromArgb(newPixelValue, newPixelValue, newPixelValue);
                         bitmap.SetPixel(x, y, edgeColor);
-                        //byte* outputPixelPtr = ptr + (y) * stride + (x) * 3;
-                        //outputPixelPtr[2] = (byte)newPixelValue;
-                        //outputPixelPtr[1] = (byte)newPixelValue;
-                        //outputPixelPtr[0] = (byte)newPixelValue;
                     }
                 }
             }
@@ -1112,6 +1286,58 @@ namespace Photoshop.Logic
             bitmap.UnlockBits(bitmapData);
             return true;
         }
+        public bool OptApplyLaplaceEdgeDetection()
+        {
+            Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
+            int width = bitmap.Width;
+            int height = bitmap.Height;
+
+            BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, width, height),
+                ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+
+            int[,] laplaceKernel = new int[,]
+            {
+                { 0, 1, 0 },
+                { 1, -4, 1 },
+                { 0, 1, 0 }
+            };
+
+            unsafe
+            {
+                byte* ptr = (byte*)bitmapData.Scan0.ToPointer();
+                int stride = bitmapData.Stride;
+
+                // Process each block in parallel
+                Parallel.For(1, height - 1, y =>
+                {
+                    for (int x = 1; x < width - 1; x++)
+                    {
+                        int laplaceSum = 0;
+
+                        for (int j = -1; j <= 1; j++)
+                        {
+                            for (int i = -1; i <= 1; i++)
+                            {
+                                byte* pixelPtr = ptr + (y + j) * stride + (x + i) * 3;
+
+                                laplaceSum += laplaceKernel[j + 1, i + 1] * pixelPtr[2];
+                            }
+                        }
+
+                        int newPixelValue = Math.Min(Math.Max(laplaceSum, 0), 255);
+
+                        Color edgeColor = Color.FromArgb(newPixelValue, newPixelValue, newPixelValue);
+                        bitmap.SetPixel(x, y, edgeColor);
+                    }
+                });
+            }
+
+            Images.Push(ConvertBitmapToByteArray(bitmap, ImageFormat.Jpeg));
+            bitmap.UnlockBits(bitmapData);
+            return true;
+        }
+
+
         public bool ApplyLoGEdgeDetection()
         {
             //double[,] gaussianKernel = new double[,]
