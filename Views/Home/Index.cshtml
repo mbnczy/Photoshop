@@ -61,17 +61,19 @@
         }
 
         input[type="range"] {
-            width: 70%;
+            width: 60%;
             margin-bottom: 10px;
         }
-
+        input[type="checkbox"] {
+            padding:10px
+        }
         button {
             padding: 10px 20px;
             background-color: #007BFF;
             color: #fff;
             border: none;
             cursor: pointer;
-            margin:5px;
+            margin: 5px;
         }
         h1 {
             display: block;
@@ -83,6 +85,12 @@
             text-align: left;
             display: inline;
             align-content:end;
+        }
+        label {
+            padding: 3px;
+            background-color: #e0e0e0;
+
+            margin-bottom:50px;
         }
     </style>
 </head>
@@ -99,7 +107,7 @@
             <div class="controls">
                 <label class="lefty">Elapsed time: </label><label id="runtime" class="lefty"></label><label class="lefty"> sec</label>
                 <br>
-                <label class="lefty">Optimalize: </label><input type="checkbox" id="chk_opt" class="lefty"/>
+                <label class="lefty" id="lbl_opt">Optimalize: </label><input type="checkbox" id="chk_opt" class="lefty"/>
                 <br>
                 <form action="@Url.Action("Index", "Home")" method="post" enctype="multipart/form-data">
                     <input type="file" id="file-input" name="img">
@@ -432,9 +440,23 @@
 
         btnundo.addEventListener('click',  function () {
             uploadedImage.src = '';
-            console.log('undo')
+            console.log('undo');
             url = '@Url.Action("Undo", "Home")';
             uploadedImage.src = url;
+            //fetch("/home/undo")
+            //    .then(response => {
+            //        if (!response.ok) {
+            //            throw new Error('Network response was not ok');
+            //        }
+            //        return response.json();
+            //    })
+            //    .then(data => {
+            //        console.log(data);
+            //        uploadedImage.src = data;
+            //    })
+            //    .catch(error => {
+            //        console.error('Fetch error:', error);
+            //    });
             lbl_runtime.textContent = "0";
         });
 
@@ -482,6 +504,14 @@
                     console.error('Fetch error:', error);
             });
         }
+        chk_opt.addEventListener("change", function () {
+            label = document.getElementById("lbl_opt");
+            if (chk_opt.checked) {
+                label.style.backgroundColor = "lightgreen";
+            } else {
+                label.style.backgroundColor = "#e0e0e0";
+            }
+        });
     </script>
 </body>
 </html>

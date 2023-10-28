@@ -9,7 +9,7 @@ namespace Photoshop.Controllers
 {
 	public class HomeController : Controller
     {
-		public PLogic logic;
+		public PLogic? logic;
 
         public IActionResult Index()
 		{
@@ -179,7 +179,7 @@ namespace Photoshop.Controllers
         }
         public IActionResult Opt_GaussFilter(string id, string sigma)
         {
-            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.ApplyGaussianFilter2(Convert.ToInt32(id), Convert.ToInt32(sigma)));
+            TimeSpan elapsedTime = PLogic.MeasureExecutionTime(() => PLogic.Instance.OptApplyGaussianFilter(Convert.ToInt32(id), Convert.ToInt32(sigma)));
 
             byte[] img = PLogic.Instance.GetImage();
             return FormatJSON(img, elapsedTime);

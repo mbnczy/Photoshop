@@ -14,7 +14,7 @@ namespace Photoshop.Logic
     public class PLogic
     {
 
-        private static PLogic instance = null;
+        private static PLogic? instance;
         public static PLogic Instance
         {
             get
@@ -1516,7 +1516,7 @@ namespace Photoshop.Logic
         {
             Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
 
-            List<Point> corners = DetectCorners(bitmap, 100000000, 0.06, 3);
+            List<Point> corners = DetectCorners(bitmap, 1000000000, 0.06, 3);
 
             BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
                 ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
@@ -1766,7 +1766,7 @@ namespace Photoshop.Logic
         {
             Bitmap bitmap = ConvertByteArrayToBitmap(Images.Peek());
 
-            List<Point> corners = DetectCornersOptimized(bitmap, 100000000, 0.06, 3);
+            List<Point> corners = DetectCornersOptimized(bitmap, 1000000000, 0.06, 3);
 
             BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
                 ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
