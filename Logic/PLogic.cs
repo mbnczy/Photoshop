@@ -31,9 +31,8 @@ namespace Photoshop.Logic
 
         public PLogic()
         {
-
-            System.Drawing.AsposeDrawing.License lic = new System.Drawing.AsposeDrawing.License();
-            //lic.SetLicense("Aspose.Drawing.lic");
+            //System.Drawing.AsposeDrawing.License lic = new System.Drawing.AsposeDrawing.License();
+            //lic.SetLicense("Aspose.Total.lic");
         }
 
         public static TimeSpan MeasureExecutionTime(Action action)

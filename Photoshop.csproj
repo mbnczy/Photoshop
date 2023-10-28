@@ -26,6 +26,6 @@
     <Folder Include="Views\Home\" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Aspose.Drawing" Version="23.9.0" />
+    <PackageReference Include="Aspose.Drawing" Version="23.10.0" />
   </ItemGroup>
 </Project>
